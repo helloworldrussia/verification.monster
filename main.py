@@ -2,8 +2,10 @@ import telebot, config
 
 from models import Account, Referal, Mailing
 from datetime import datetime
+from telebot import util
 
 bot = telebot.TeleBot(config.token, parse_mode="Markdown")
+bot.worker_pool = util.ThreadPool(num_threads=8)
 
 AccountModel = None
 ReferalModel = None
@@ -216,8 +218,7 @@ def finish_proccess(message):
         )
     mailing.save()
 
-    bot.send_message(message.chat.id, f"Всё готово, сейчас в течении 5-10 минут мы вышлем на {AccountModel.credit_card},\n ваше вознаграждение. Вы можете переслать сообщение своим друзьям, оно уже с вашим реферальным кодом и получить по 100 грн за каждого зарегистрированного по вашей ссылке... \n *Можете перейти в меню:* /start")
-
+    bot.send_message(message.chat.id, f"Всё, готово! \nТеперь ожидайте когда вашу заявку примет наш сотрудник с инструкцией. *Перейти в меню*: /start")
 
 @bot.message_handler(content_types=['text'])
 def menu_options(message):

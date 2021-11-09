@@ -8,7 +8,7 @@ class Accounts(models.Model):
     tg_id = models.IntegerField(blank=True, null=True)
     tg_username = models.TextField(blank=True, null=True)  
     first_name = models.TextField(blank=True, null=True)  # This field type is a guess.
-    patronymic = models.FloatField(blank=True, null=True)
+    patronymic = models.TextField(blank=True, null=True)
     last_name = models.TextField(blank=True, null=True)
     country = models.TextField(blank=True, null=True)  # This field type is a guess.
     region = models.TextField(blank=True, null=True)
@@ -32,9 +32,11 @@ class Completed(models.Model):
     account_id = models.ForeignKey(Accounts, on_delete=models.CASCADE)
     datetime = models.DateTimeField(auto_now_add=True)
     status = models.CharField(max_length=50)
+    link = models.CharField(max_length=50)
+    instruction = models.TextField()
 
     def get_registrator_username(self):
-        return "@"+User.objects.get(id=self.registrator_id).tg_username
+        return "@"+User.objects.get(id=self.registrator_id.id).username
 
 
 class Mailing(models.Model):

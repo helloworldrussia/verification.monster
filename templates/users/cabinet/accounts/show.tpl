@@ -13,7 +13,7 @@
         <ul class="nav">
             {% if request.user.get_group == "Администратор" %}
             <li class="nav-item">
-                <a href="#" class="nav-link">
+                <a href="/accounts/all" class="nav-link">
                     Все
                 </a>
             </li>

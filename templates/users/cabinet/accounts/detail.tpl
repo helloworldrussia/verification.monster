@@ -14,12 +14,6 @@
         <h3>
             Данные о заявке #{{account.id}}
         </h3>
-        <a href="/accounts/take/{{ account.id }}">
-            <button class="btn btn-success">
-                Принять
-            </button>
-        </a>
-        
         {% if user.get_group == "Администратор" %}
             <a href="/accounts/delete/{{ account.id }}">
                 <button class="btn btn-danger">
@@ -85,15 +79,41 @@
                         <b>Вид оплаты:</b> {{ account.type_payment }}
                     </li>
                     <li class="list-group-item">
-                        <b>Статус:</b> {% if status|length != 0 %} {{ status.status  }}  {% else %} Не принят {% endif %}
+                        <b>Статус:</b> {% if status|length != 0 %} {{ status.0.status  }}  {% else %} Не принят {% endif %}
                     </li>
                     {% if status|length != 0 %}
                         <li class="list-group-item">
-                            <b>Регистратор:</b> {{ status.get_registrator_username }}
+                            <b>Регистратор:</b> 
+                            <a href="https://t.me/@{{ status.0.get_registrator_username }}">
+                                {{ status.0.get_registrator_username }}
+                            </a>
                         </li>
                     {% endif %}
-
                 </ul>
+                <br />
+                {% if status|length == 0 %}
+                    <ul class="list-group">
+                        <li class="list-group-item">
+                            <form action="" method="POST">
+                                <div class="form-group">
+                                    <label>
+                                        <b>Ссылка: </b>
+                                    </label>
+                                    <input name="link" class="form-control" required/>
+                                </div>
+                                <div class="form-group">
+                                    <label>
+                                        <b>Инструкция: </b>
+                                    </label>
+                                    <textarea name="instruction" class="form-control" required></textarea>
+                                </div>
+                                <button class="btn btn-success" type="submit">
+                                    Принять
+                                </button>
+                            </form>
+                        </li>
+                    </ul>
+                {% endif %}
             </div>
         </div>
 
