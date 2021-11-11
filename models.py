@@ -187,7 +187,20 @@ class Mailing:
 
         self.connection = sqlite3.connect(config.db_file, check_same_thread=False)
 
+    @staticmethod
+    def dict_factory(cursor, row):
+        d = {}
+        for idx, col in enumerate(cursor.description):
+            d[col[0]] = row[idx]
+        return d
 
+
+    def select_where(self, tg_id):
+        self.connection.row_factory = self.dict_factory
+        cursor = self.connection.cursor()
+        query = f"SELECT * FROM `accounts_mailing` WHERE `tg_id`='{tg_id}'"
+        cursor.execute(query)
+        return cursor.fetchall()
 
     def save(self):
         cursor = self.connection.cursor()
@@ -195,3 +208,40 @@ class Mailing:
         cursor.execute(query)
 
         self.connection.commit()
+
+
+class PassportFile:
+
+    def __init__(self, 
+                        id=None,
+                        tg_id=None,
+                        path=None):
+    
+        self.id = id
+        self.tg_id = tg_id
+        self.path = path
+        
+        self.connection = sqlite3.connect(config.db_file, check_same_thread=False)
+
+
+    @staticmethod
+    def dict_factory(cursor, row):
+        d = {}
+        for idx, col in enumerate(cursor.description):
+            d[col[0]] = row[idx]
+        return d
+
+    def save(self):
+        cursor = self.connection.cursor()
+        query = f"INSERT INTO `accounts_passportfile`(`tg_id`, `path`) VALUES('{self.tg_id}', '{self.path}') " 
+        cursor.execute(query)
+
+        self.connection.commit()
+
+
+    def select_where(self, tg_id):
+        self.connection.row_factory = self.dict_factory
+        cursor = self.connection.cursor()
+        query = f"SELECT * FROM `accounts_passportfile` WHERE `tg_id`='{tg_id}'"
+        cursor.execute(query)
+        return cursor.fetchall()

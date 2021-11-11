@@ -3,7 +3,7 @@ from django.http import HttpResponse
 from django.utils.decorators import method_decorator
 from django.contrib.auth.decorators import login_required
 
-from accounts.models import Accounts, Completed, Mailing
+from accounts.models import Accounts, Completed, Mailing, PassportFile
 from referals.models import Referals
 from telegram_api.app import send_message
 
@@ -71,9 +71,13 @@ def detail_view(request, account_id):
                 referal_username = "нет"
             
             get_status = Completed.objects.filter(account_id=account_id)
-
-            return render(request, "users/cabinet/accounts/detail.tpl", {"user":request.user, "account": account_detail, "referal_username": referal_username, "status": get_status})
-        except:
+            try:
+                get_passport_file = PassportFile.objects.get(tg_id=account_detail.tg_id)
+            except:
+                get_passport_file = None
+            return render(request, "users/cabinet/accounts/detail.tpl", {"user":request.user, "account": account_detail, "referal_username": referal_username, "status": get_status, "passportfile": get_passport_file})
+        except Exception as e:
+            print(e)
             return HttpResponse("Заявки не найдено!")
     
     elif request.user.get_group() == "Регистратор":
@@ -92,7 +96,11 @@ def detail_view(request, account_id):
             return HttpResponse("Заявки не найдено")
 
         get_status = Completed.objects.filter(account_id=account_id)
-        return render(request, "users/cabinet/accounts/detail.tpl", {"user":request.user, "account": get_account_detail, "referal_username": referal_username, "status": get_status})
+        print(account_detail.tg_id)
+        get_passport_file = PassportFile.objects.get(tg_id=account_detail.tg_id)
+        return render(request, "users/cabinet/accounts/detail.tpl", {"user":request.user, "account": get_account_detail, "referal_username": referal_username, "status": get_status, 
+        
+        })
     
     
 
@@ -103,6 +111,14 @@ def delete_view(request, account_id):
     if request.user.get_group() == "Администратор":
         try:
             account_object = Accounts.objects.get(id=account_id)
+            try:
+                passportfile_object = PassportFile.objects.get(tg_id=account_object.tg_id).delete()
+            except:
+                pass
+            try:
+                referal_object = Referals.objects.get(to_id=account_object.tg_id).delete()
+            except:
+                pass
             if account_object.status == "1":
                 completed_object = Completed.objects.get(account_id=account_object.id).delete()
             

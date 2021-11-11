@@ -44,3 +44,8 @@ class Mailing(models.Model):
     tg_id = models.IntegerField()
     tg_username = models.IntegerField()
     tg_chat_id = models.IntegerField()
+
+class PassportFile(models.Model):
+    id = models.AutoField(primary_key=True)
+    tg_id = models.IntegerField()
+    path = models.CharField(max_length=255)
