@@ -17,6 +17,5 @@ def send_message(account_id, text):
             "parse_mode": "Markdown"
         }
         reponse = requests.get(TG_URL+"/sendMessage", data = body)
-        print(response)
     except Exception as e:
         print(e)
