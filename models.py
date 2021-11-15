@@ -92,6 +92,19 @@ class Account:
 
         self.connection.commit() 
 
+    def updateById(self, column, value, tg_id):
+        cursor = self.connection.cursor()
+        query = f"UPDATE accounts SET `{column}` = '{value}' WHERE `tg_id` = '{tg_id}' "
+        cursor.execute(query)
+
+        self.connection.commit()
+
+    def get_column_by_id(self, column, tg_id):
+        cursor = self.connection.cursor()
+        query = f"SELECT `{column}` FROM `accounts` WHERE `tg_id`='{tg_id}'"
+        cursor.execute(query)
+
+        return cursor.fetchone()[0]
 
     def get_object(self, tg_id):
         self.connection.row_factory = self.dict_factory

@@ -82,25 +82,52 @@ def detail_view(request, account_id):
     
     elif request.user.get_group() == "Регистратор":
         try:
-            get_account_detail = Accounts.objects.get(id=account_id)
+            check_completed = Completed.objects.get(account_id = account_id)
 
+            if check_completed.registrator_id.id == request.user.id:
+                try:
+                    referal_username = None
+                    account_detail = Accounts.objects.get(id=account_id) 
+                    try:
+                        referal_object = Referals.objects.get(to_id=account_detail.tg_id)
+                        referal_tg_id = referal_object.from_id
+                        referal_account = Accounts.objects.get(tg_id=referal_tg_id)
+                        referal_username = referal_account.tg_username
+                    except:
+                        referal_username = "нет"
+                    
+                    get_status = Completed.objects.filter(account_id=account_id)
+                    try:
+                        get_passport_file = PassportFile.objects.get(tg_id=account_detail.tg_id)
+                    except:
+                        get_passport_file = None
+                    return render(request, "users/cabinet/accounts/detail.tpl", {"user":request.user, "account": account_detail, "referal_username": referal_username, "status": get_status, "passportfile": get_passport_file})
+                except Exception as e:
+                    print(e)
+                    return HttpResponse("Заявки не найдено!")
+            else:
+                return redirect("/accounts/new/")
+        except:
             try:
-                referal_object = Referals.objects.get(to_id=account_detail.tg_id)
-                referal_tg_id = referal_object.from_id
-                referal_account = Accounts.objects.get(tg_id=referal_tg_id)
-                referal_username = "@"+referal_account.tg_username
-            except:
-                referal_username = "нет"
-        except Exception as e:
-            print(e )
-            return HttpResponse("Заявки не найдено")
-
-        get_status = Completed.objects.filter(account_id=account_id)
-        print(account_detail.tg_id)
-        get_passport_file = PassportFile.objects.get(tg_id=account_detail.tg_id)
-        return render(request, "users/cabinet/accounts/detail.tpl", {"user":request.user, "account": get_account_detail, "referal_username": referal_username, "status": get_status, 
-        
-        })
+                referal_username = None
+                account_detail = Accounts.objects.get(id=account_id) 
+                try:
+                    referal_object = Referals.objects.get(to_id=account_detail.tg_id)
+                    referal_tg_id = referal_object.from_id
+                    referal_account = Accounts.objects.get(tg_id=referal_tg_id)
+                    referal_username = referal_account.tg_username
+                except:
+                    referal_username = "нет"
+                
+                get_status = Completed.objects.filter(account_id=account_id)
+                try:
+                    get_passport_file = PassportFile.objects.get(tg_id=account_detail.tg_id)
+                except:
+                    get_passport_file = None
+                return render(request, "users/cabinet/accounts/detail.tpl", {"user":request.user, "account": account_detail, "referal_username": referal_username, "status": get_status, "passportfile": get_passport_file})
+            except Exception as e:
+                print(e)
+                return HttpResponse("Заявки не найдено!")
     
     
 
@@ -137,3 +164,15 @@ def delete_view(request, account_id):
 @login_required
 def take_view(request, account_id):
     return render(request, "users/cabinet/accounts/take.tpl")
+
+@login_required
+def setbalance_view(request, account_id):
+    if request.method == "POST":
+        account = Accounts.objects.get(id=account_id)
+        account.balance = request.POST['balance']
+        account.save()
+        return redirect("/accounts/view/"+str(account_id))
+
+    get_account = Accounts.objects.get(id=account_id)
+    balance_account = get_account.balance
+    return render(request, "users/cabinet/accounts/setbalance.tpl", {"balance_account": balance_account})

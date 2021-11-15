@@ -48,7 +48,7 @@
                         <td>{{ user.email }}</td>
                         <td>{{ user.get_group }}</td>
                         <td>
-                            <a href="/user/view/{{user.id}}">Подробнее</a>
+                            <a class="text-danger" href="/user/delete/{{user.id}}">Уволить</a>
                         </td>
                     </tr>
                 {% endfor %}

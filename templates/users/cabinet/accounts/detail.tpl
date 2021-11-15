@@ -14,6 +14,11 @@
         <h3>
             Данные о заявке #{{account.id}}
         </h3>
+        <a href="/accounts/setbalance/{{ account.id }}">
+            <button class="btn btn-success">
+                Установить баланс
+            </button>
+        </a>
         {% if user.get_group == "Администратор" %}
             <a href="/accounts/delete/{{ account.id }}">
                 <button class="btn btn-danger">

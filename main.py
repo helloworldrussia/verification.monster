@@ -28,7 +28,8 @@ AuthStatus = False
 """
 @bot.message_handler(commands=['start'])
 def send_start(message):
-    
+    hide_keyboard = telebot.types.ReplyKeyboardRemove(selective=False)
+    bot.send_message(message.chat.id, f"Привет _{message.from_user.first_name} {message.from_user.last_name}_!", reply_markup=hide_keyboard)
     get_account = Account().select_where('tg_id', message.from_user.id)
     if len(get_account) == 1:
 
@@ -46,12 +47,10 @@ def send_start(message):
         if len(passportfile_object) == 0:
             menu_markup.add(set_passportfile)
 
-        bot.send_message(message.chat.id, f"Привет _{message.from_user.first_name} {message.from_user.last_name}_!", reply_markup=menu_markup)
+        bot.send_message(message.chat.id, "*Ваше меню:*", reply_markup=menu_markup)
 
     else:
-        AccountModel = Account(tg_id = message.chat.id,
-                                tg_username =  message.chat.username
-        )
+        AccountModel = Account()
 
         try:
             if int(message.text.split()[1]) != AccountModel.tg_id:
@@ -68,7 +67,7 @@ def send_start(message):
         register = telebot.types.InlineKeyboardButton("Пройти регистрацию", callback_data="yeah_get_money")
         select_refer_register_markup.add(referal, register)
 
-        show_start_inline = bot.send_message(message.chat.id, "*Привет! Ты хочешь заработать немного денег?!* \nХочешь привлечь друзей или зарегистрироваться за деньги? ", reply_markup=select_refer_register_markup)
+        show_start_inline = bot.send_message(message.chat.id, "*Ты хочешь заработать немного денег?!* \nХочешь привлечь друзей или зарегистрироваться за деньги? ", reply_markup=select_refer_register_markup)
 
 #   -----------------Callback Handlers-----------------
 
@@ -109,8 +108,6 @@ def select_time_verification(call):
 
     else:
         bot.send_message(call.message.chat.id, "*Хорошо, ваша заявка будет создана.*\nПозже вы сможете загрузить документы в личном кабинете.")
-        global AuthStatus
-        AuthStatus = True
         finish_proccess(call.message)
 
 
@@ -143,7 +140,6 @@ def callback_handerl(call):
 
     elif(call.data == "select_payment_100"):
         AccountModel.type_payment = 100
-        AccountModel.save()
 
         time_verification_markup = telebot.types.InlineKeyboardMarkup(row_width=1)
         now = telebot.types.InlineKeyboardButton("Сейчас", callback_data="now_verification")
@@ -158,7 +154,6 @@ def callback_handerl(call):
 
     elif(call.data == "select_payment_300"):
         AccountModel.type_payment = 300
-        AccountModel.save()
 
         time_verification_markup = telebot.types.InlineKeyboardMarkup(row_width=1)
         now = telebot.types.InlineKeyboardButton("Сейчас", callback_data="now_verification")
@@ -170,13 +165,19 @@ def callback_handerl(call):
         )
 
     elif(call.data == "back_to_main_menu"):
-        menu_markup = telebot.types.InlineKeyboardMarkup(row_width=1)
-        balance = telebot.types.InlineKeyboardButton("Мой баланс", callback_data="account_balance")
-        referal = telebot.types.InlineKeyboardButton("Мои рефералы", callback_data="account_referals")
+        menu_markup = telebot.types.ReplyKeyboardMarkup(row_width=1)
+        balance = telebot.types.KeyboardButton("Мой баланс")
+        referal = telebot.types.KeyboardButton("Мои рефералы")
+        set_passportfile = telebot.types.KeyboardButton("Загрузить фото паспорта")
         menu_markup.add(balance, referal)
-        
-        bot.send_message(call.message.chat.id, f"Привет _{call.message.chat.first_name} {call.message.chat.last_name}_ !", reply_markup=menu_markup)
 
+        passportfile_object = PassportFile().select_where(tg_id=AccountModel.tg_id)
+        if len(passportfile_object) == 0:
+            menu_markup.add(set_passportfile)
+
+        bot.send_message(call.message.chat.id, "*Ваше меню:*", reply_markup=menu_markup)
+    
+    
     elif(call.data == "go_to_withdraw"):
         withdraw_module(call.message)
 
@@ -202,12 +203,13 @@ def download_verification_photo(message):
         PassportFile(tg_id=message.chat.id, path=path_file).save()
         
 
-        finish_proccess(message) 
+        finish_proccess(message)  
 
     elif message.content_type == "photo":
         photo_id = message.photo[-1].file_id
         photo_info = bot.get_file(photo_id)
-        data = urllib.request.urlretrieve(f'http://api.telegram.org/file/bot{config.token}/{photo_info.file_path}', "documents/"+str(message.chat.id)+".jpg")
+        path_file = "static/tg_documents/"+str(message.chat.id)+".jpg"
+        data = urllib.request.urlretrieve(f'http://api.telegram.org/file/bot{config.token}/{photo_info.file_path}', path_file)
         finish_proccess(message)
 
 def input_credit_card(message):
@@ -299,6 +301,15 @@ def input_datebirthday(message):
 
 
 def finish_proccess(message):
+    
+    if AccountModel.tg_id is None and AccountModel.tg_username is None:
+        AccountModel.tg_username = message.chat.username
+        AccountModel.tg_id = message.chat.id
+        AccountModel.show()
+        
+        AccountModel.save()
+
+
     if not ReferalModel is None:
         ReferalModel.to_id = AccountModel.tg_id
         ReferalModel.save()
@@ -311,6 +322,7 @@ def finish_proccess(message):
             )
         mailing.save()
 
+
     bot.send_message(message.chat.id, f"Всё, готово! \nТеперь ожидайте когда вашу заявку примет наш сотрудник с инструкцией. *Перейти в меню*: /start")
 
 
@@ -319,14 +331,13 @@ def finish_proccess(message):
 def menu_options(message):
     if(message.text ==  "Мой баланс"):
         balance_method_markup = telebot.types.InlineKeyboardMarkup(row_width=1)
-        withdraw = telebot.types.InlineKeyboardButton("Вывести", callback_data="withdraw_balance")
         change_number_card = telebot.types.InlineKeyboardButton("Изменить реквизиты", callback_data="no_valid_credit_card")
-        balance_method_markup.add(withdraw, change_number_card)
+        balance_method_markup.add(change_number_card)
         
         bot.send_message(message.chat.id, f"Ваш баланс: *{AccountModel.balance}* грн.", reply_markup=balance_method_markup)
 
     elif(message.text == "Мои рефералы"):
-        referals = Referal().select_where(AccountModel.tg_id)
+        referals = Referal().select_where(message.chat.id)
 
         one_hundred_payment_list = list()
         three_hundred_payment_list = list()
@@ -362,7 +373,8 @@ def withdraw_module(message):
     no = telebot.types.InlineKeyboardButton("Нет", callback_data="no_valid_credit_card")
     change_credit_markup.add(yes, no)
 
-    bot.send_message(message.chat.id, f"Ваши реквизиты: *{AccountModel.credit_card}* \nВерно?", reply_markup=change_credit_markup)
+    get_credit_card = Account().get_column_by_id(column="credit_card", tg_id=message.chat.id)
+    bot.send_message(message.chat.id, f"Ваши реквизиты: *{get_credit_card}* \nВерно?", reply_markup=change_credit_markup)
 
 
 def input_new_credit_card(message):
@@ -373,9 +385,9 @@ def input_new_credit_card(message):
 
     check_validate = re.match(config.pattern_credit_card, message.text)
     if check_validate:
-        AccountModel.credit_card = message.text
-        AccountModel.update()
-        bot.send_message(message.chat.id, "_Ваши реквизиты успешно обновлены!_ \nЗаказать выплату на новые данные?" ,reply_markup=go_withdraw_markup)    
+        Account().updateById(column="credit_card", value=message.text, tg_id=message.chat.id)
+
+        bot.send_message(message.chat.id, "_Ваши реквизиты успешно обновлены!_")    
     else:
         label_error = bot.send_message(message.chat.id, "_Номер карты не корректный.\nПоробуйте ещё раз_")
         bot.register_next_step_handler(label_error, input_new_credit_card)
