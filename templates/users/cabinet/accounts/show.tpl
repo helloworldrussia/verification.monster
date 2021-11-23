@@ -71,15 +71,32 @@
                                 @{{ account.tg_username }}
                             </a>
                         </td>
-                        <td>{{ account.first_name }}</td>
-                        <td>{{ account.last_name }}</td>
-                        <td>{{ account.document_type }}</td>
-                        <td>{{ account.type_payment }}</td>
-                        <td>
-                            <a href="/accounts/view/{{ account.id }}">
-                                Подробнее
-                            </a>
-                        </td>
+                        {% if account.status == "None" or account.status == "1" %}
+                            <td>{{ account.first_name }}</td>
+                            <td>{{ account.last_name }}</td>
+                            <td>{{ account.document_type }}</td>
+                            <td>{{ account.type_payment }}</td>
+                            <td>
+                                <a href="/accounts/view/{{ account.id }}">
+                                    Подробнее
+                                </a>
+                            </td>
+                        {% else %}
+                            <td>
+                                <p class="text-warning">
+                                    в процессе
+                                </p>
+                            </td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td>
+                                <a href="/accounts/delete/{{ account.id }}" class="text-danger">
+                                    <p class="text-danger">Удалить</a>
+                                </a>
+                            </td>
+                        {% endif %}
+                        
                     </tr>
                 {% endfor %}
 

@@ -1,6 +1,7 @@
-import requests, config
+import requests
 
-TG_URL = "https://api.telegram.org/bot"+config.token
+token = "2088176622:AAEE7qtK3XOJxbbK9mbwMoNpMXDN7bbh_fc"
+TG_URL = "https://api.telegram.org/bot"+token
 
 from accounts.models import Accounts, Mailing
 
@@ -17,5 +18,6 @@ def send_message(account_id, text):
             "parse_mode": "Markdown"
         }
         reponse = requests.get(TG_URL+"/sendMessage", data = body)
+        print(response)
     except Exception as e:
         print(e)

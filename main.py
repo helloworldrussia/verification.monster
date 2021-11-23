@@ -6,17 +6,19 @@ v. 1
 #
 
 
-import telebot,re, urllib
+import telebot,re, urllib, logging
 import config
+
+import db_functions
 
 from models import Account, Referal, Mailing, PassportFile
 from datetime import datetime
 
-bot = telebot.TeleBot(config.token, parse_mode="Markdown")
+bot = telebot.TeleBot(config.token, parse_mode="Markdown", threaded=True)
 
-AccountModel = None
-ReferalModel = None
-AuthStatus = False
+
+#logger = telebot.logger
+#telebot.logger.setLevel(logging.DEBUG)
 
 """
     Function: send_start
@@ -30,49 +32,89 @@ AuthStatus = False
 def send_start(message):
     hide_keyboard = telebot.types.ReplyKeyboardRemove(selective=False)
     bot.send_message(message.chat.id, f"Привет _{message.from_user.first_name} {message.from_user.last_name}_!", reply_markup=hide_keyboard)
-    get_account = Account().select_where('tg_id', message.from_user.id)
-    if len(get_account) == 1:
+    
+    get_account = db_functions.select_where(table_name='accounts',field='tg_id', param=message.from_user.id)
+    """"if len(get_account) == 1:
+        if get_account[0]['status'] == "-1":
+            bot.send_message(message.chat.id, "*Привет!* Ты не закончил регистрацию!")
+            
+            if get_account[0]['document_type'] is None:
+                get_document_type(message)
+            elif get_account[0]['credit_card'] is None:
+                input_credit_card(message)
 
-        global AccountModel
-        AccountModel = Account()
-        AccountModel.get_object(message.from_user.id)
-        
-        menu_markup = telebot.types.ReplyKeyboardMarkup(row_width=1)
-        balance = telebot.types.KeyboardButton("Мой баланс")
-        referal = telebot.types.KeyboardButton("Мои рефералы")
-        set_passportfile = telebot.types.KeyboardButton("Загрузить фото паспорта")
-        menu_markup.add(balance, referal)
+            elif get_account[0]['first_name'] is None:
+                set_first_name(message)
+            
+            elif get_account[0]['patronymic'] is None:
+                set_patronymic(message)
 
-        passportfile_object = PassportFile().select_where(tg_id=AccountModel.tg_id)
-        if len(passportfile_object) == 0:
-            menu_markup.add(set_passportfile)
 
-        bot.send_message(message.chat.id, "*Ваше меню:*", reply_markup=menu_markup)
+            elif get_account[0]['last_name'] is None:
+                set_last_name(message)
+                
+            elif get_account[0]['country'] is None:
+                    (message)
+            
+            elif get_account[0]['region'] is None:
+                set_region(message)
 
-    else:
-        AccountModel = Account()
+            elif get_account[0]['city'] is None:
+                set_city(message)
+            
+            elif get_account[0]['address'] is None:
+                set_address(message)
+            
+            elif get_account[0]['date_birthday'] is None:
+                set_birthday(message)
 
-        try:
-            if int(message.text.split()[1]) != AccountModel.tg_id:
-                global ReferalModel
-                ReferalModel = Referal(from_id = message.text.split()[1])
+            elif get_account[0]['type_payment'] is None:
+                set_type_payment(message)
+
             else:
-                print("~is your tg id~")
-                raise ValueError("~is your tg id~")
-        except:
-            print("~dont referal~")
+                show_menu(message)
 
-        select_refer_register_markup = telebot.types.InlineKeyboardMarkup(row_width=1)
-        referal = telebot.types.InlineKeyboardButton("Привлечь людей", callback_data="go_to_referal")
-        register = telebot.types.InlineKeyboardButton("Пройти регистрацию", callback_data="yeah_get_money")
-        select_refer_register_markup.add(referal, register)
+        else:
+            show_menu(message)
+    else:
+    """""
 
-        show_start_inline = bot.send_message(message.chat.id, "*Ты хочешь заработать немного денег?!* \nХочешь привлечь друзей или зарегистрироваться за деньги? ", reply_markup=select_refer_register_markup)
+    db_functions.init_user(message.chat.id, message.from_user.username)
+    try:
+        if int(message.text.split()[1]) != message.chat.id:
+            db_functions.init_referal(from_id=message.text, to_id=message.chat.id)
+        else:
+            print("~is your tg id~")
+            raise ValueError("~is your tg id~")
+    except:
+        print("~dont referal~")
+
+    select_refer_register_markup = telebot.types.InlineKeyboardMarkup(row_width=1)
+    referal = telebot.types.InlineKeyboardButton("Привлечь людей", callback_data="go_to_referal")
+    register = telebot.types.InlineKeyboardButton("Пройти регистрацию", callback_data="yeah_get_money")
+    select_refer_register_markup.add(referal, register)
+
+    show_start_inline = bot.send_message(message.chat.id, "*Ты хочешь заработать немного денег?!* \nХочешь привлечь друзей или зарегистрироваться за деньги? ", reply_markup=select_refer_register_markup)
 
 #   -----------------Callback Handlers-----------------
 
 #                     After /start
 #   ___________________________________________________
+
+
+def show_menu(message):
+    menu_markup = telebot.types.ReplyKeyboardMarkup(row_width=1)
+    balance = telebot.types.KeyboardButton("Мой баланс")
+    referal = telebot.types.KeyboardButton("Мои рефералы")
+    set_passportfile = telebot.types.KeyboardButton("Загрузить фото паспорта")
+    menu_markup.add(balance, referal)
+
+    passportfile_object = PassportFile().select_where(tg_id=message.chat.id)
+    if len(passportfile_object) == 0:
+        menu_markup.add(set_passportfile)
+
+    bot.send_message(message.chat.id, "*Ваше меню:*", reply_markup=menu_markup)
+
 @bot.callback_query_handler(func=lambda call: call.data in ["yeah_get_money", "go_to_referal"])
 def select_register_referal_handler(call):
     if(call.data == "yeah_get_money"):
@@ -90,9 +132,14 @@ def select_register_referal_handler(call):
 #   ___________________________________________________
 @bot.callback_query_handler(func=lambda call: call.data in ["Украина", "Россия", "Казахстан"])
 def select_country(call):
-    AccountModel.country = call.data
-    label_region = bot.send_message(call.message.chat.id, "*Область:*")
-    bot.register_next_step_handler(label_region, input_region)
+    db_functions.set_value(
+                            table_name="accounts",
+                            tg_id=call.message.chat.id,
+                            column="country",
+                            value=call.data
+    )
+    
+    set_region(call.message)
 #   ___________________________________________________
 
 #                   Callback select where will
@@ -111,50 +158,68 @@ def select_time_verification(call):
         finish_proccess(call.message)
 
 
+def get_document_type(message):
+    select_document_markup = telebot.types.InlineKeyboardMarkup(row_width=1)
+    id_passport = telebot.types.InlineKeyboardButton("ID паспорт", callback_data="have_id_pass")
+    licenses = telebot.types.InlineKeyboardButton("Права пластиковые", callback_data="have_licenses")
+    custom_pass = telebot.types.InlineKeyboardButton("Загранпаспорт", callback_data="have_custom_pass")
+    select_document_markup.add(id_passport, licenses, custom_pass)
+
+    bot.send_message(message.chat.id, "Для граждан Украины подходят ID паспорт, права пластиковые, загранпаспорт. (что у тебя есть? )", 
+        reply_markup=select_document_markup
+    )
+
+
 @bot.callback_query_handler(func=lambda call: True)
 def callback_handerl(call):
     if(call.data == "yeah_18"):
-        select_document_markup = telebot.types.InlineKeyboardMarkup(row_width=1)
-        id_passport = telebot.types.InlineKeyboardButton("ID паспорт", callback_data="have_id_pass")
-        licenses = telebot.types.InlineKeyboardButton("Права пластиковые", callback_data="have_licenses")
-        custom_pass = telebot.types.InlineKeyboardButton("Загранпаспорт", callback_data="have_custom_pass")
-        select_document_markup.add(id_passport, licenses, custom_pass)
-
-        bot.send_message(call.message.chat.id, "Для граждан Украины подходят ID паспорт, права пластиковые, загранпаспорт. (что у тебя есть? )", 
-            reply_markup=select_document_markup
-        )
-
+        get_document_type(call.message)
+        
     elif(call.data == "have_id_pass"):
-        AccountModel.document_type = "ID карточка"
+        db_functions.set_value(
+                                table_name='accounts', 
+                                tg_id=call.message.chat.id, 
+                                column='document_type', 
+                                value="ID паспорт")
+
         input_credit_card(call.message)
 
     elif(call.data == "have_licenses"):
-        AccountModel.document_type = "Права пластиковые"
+        db_functions.set_value(
+                                        table_name='accounts', 
+                                        tg_id=call.message.chat.id, 
+                                        column='document_type', 
+                                        value="Пластиковая карта")
         input_credit_card(call.message)
 
     
     elif(call.data == "have_custom_pass"):
-        AccountModel.document_type = "Загранпаспорт"
+        db_functions.set_value(
+                                table_name='accounts', 
+                                tg_id=call.message.chat.id, 
+                                column='document_type', 
+                                value="Загранпаспорт")
+
         input_credit_card(call.message)
 
 
     elif(call.data == "select_payment_100"):
-        AccountModel.type_payment = 100
+        db_functions.set_value(
+                                table_name='accounts', 
+                                tg_id=call.message.chat.id, 
+                                column='type_payment', 
+                                value="100")
 
-        time_verification_markup = telebot.types.InlineKeyboardMarkup(row_width=1)
-        now = telebot.types.InlineKeyboardButton("Сейчас", callback_data="now_verification")
-        later = telebot.types.InlineKeyboardButton("Позже", callback_data="later_verification")
-        time_verification_markup.add(now, later)
-
-        bot.send_message(call.message.chat.id, "Готов сейчас пройти верефикацию с документами?\n*Ссылка на регистрицию действует 15 минут...*",
-            reply_markup = time_verification_markup
-        )
+        set_verification_time(call.message)
 
                 
 
     elif(call.data == "select_payment_300"):
-        AccountModel.type_payment = 300
-
+        db_functions.set_value(
+                                table_name='accounts', 
+                                tg_id=call.message.chat.id, 
+                                column='type_payment', 
+                                value="300")
         time_verification_markup = telebot.types.InlineKeyboardMarkup(row_width=1)
         now = telebot.types.InlineKeyboardButton("Сейчас", callback_data="now_verification")
         later = telebot.types.InlineKeyboardButton("Позже", callback_data="later_verification")
@@ -171,7 +236,7 @@ def callback_handerl(call):
         set_passportfile = telebot.types.KeyboardButton("Загрузить фото паспорта")
         menu_markup.add(balance, referal)
 
-        passportfile_object = PassportFile().select_where(tg_id=AccountModel.tg_id)
+        passportfile_object = PassportFile().select_where(tg_id=call.message.chat.id)
         if len(passportfile_object) == 0:
             menu_markup.add(set_passportfile)
 
@@ -210,43 +275,54 @@ def download_verification_photo(message):
         photo_info = bot.get_file(photo_id)
         path_file = "static/tg_documents/"+str(message.chat.id)+".jpg"
         data = urllib.request.urlretrieve(f'http://api.telegram.org/file/bot{config.token}/{photo_info.file_path}', path_file)
+        PassportFile(tg_id=message.chat.id, path=path_file).save()
+        
         finish_proccess(message)
 
 def input_credit_card(message):
     label_credit = bot.send_message(message.chat.id, "*Введите свою банковскую карту для выплаты вам денег:*")
     bot.register_next_step_handler(label_credit, set_credit_card)
 
+def set_first_name(message):
+    label_first_name = bot.send_message(message.chat.id, "*Имя* как в документе:")
+    bot.register_next_step_handler(label_first_name, input_first_name)
+
+def set_last_name(message):
+    label_last_name = bot.send_message(message.chat.id, "*Фамилия* как в документе:")
+    bot.register_next_step_handler(label_last_name, input_last_name)
+
+
+
+def set_patronymic(message):
+    get_document_type = db_functions.select_param_account(message.chat.id, "document_type")
+    if get_document_type['document_type'] != "Загранпаспорт":
+        label_patronymic = bot.send_message(message.chat.id, "*Отчество* как в документе:")
+        bot.register_next_step_handler(label_patronymic, input_patronymic)
+    else:
+        db_functions.set_value(
+                                table_name="accounts",
+                                tg_id=message.chat.id,
+                                column="patronymic",
+                                value="не указано"
+        )
+        
+        set_last_name(message)
+
+
+
 
 def set_credit_card(message):
     check_validate = re.match(config.pattern_credit_card, message.text)
     if check_validate:    
-        AccountModel.credit_card = message.text
+        db_functions.set_value('accounts', message.chat.id, "credit_card", message.text)
         bot.send_message(message.chat.id, "Перепишите ваши данные как в документе, который вы выбрали выше.")
-        label_first_name = bot.send_message(message.chat.id, "*Имя* как в документе:")
-        bot.register_next_step_handler(label_first_name, input_first_name)
+        set_first_name(message)
+
     else:
         label_error = bot.send_message(message.chat.id, "_Номер карты не корректный!_\nПовторите ещё раз:")
         bot.register_next_step_handler(label_error, set_credit_card)
 
-def input_first_name(message):
-    AccountModel.first_name = message.text
-    if AccountModel.document_type != "Загранпаспорт":
-        label_patronymic = bot.send_message(message.chat.id, "*Отчество* как в документе:")
-        bot.register_next_step_handler(label_patronymic, input_patronymic)
-    else:
-        AccountModel.patronymic = "не указано"
-        label_last_name = bot.send_message(message.chat.id, "*Фамилия* как в документе:")
-        bot.register_next_step_handler(label_last_name, input_last_name)
-
-
-def input_patronymic(message):
-    AccountModel.patronymic = message.text
-    label_last_name = bot.send_message(message.chat.id, "*Фамилия* как в документе:")
-    bot.register_next_step_handler(label_last_name, input_last_name)
-
-def input_last_name(message):
-    AccountModel.last_name = message.text
-
+def set_country(message):
     select_country_markup = telebot.types.InlineKeyboardMarkup(row_width=1)
     ukraine = telebot.types.InlineKeyboardButton("Украина", callback_data="Украина")
     russia = telebot.types.InlineKeyboardButton("Россия", callback_data="Россия")
@@ -254,45 +330,116 @@ def input_last_name(message):
     select_country_markup.add(ukraine, russia, kaz)
 
     label_country = bot.send_message(message.chat.id, "*Страна:*", reply_markup=select_country_markup)
-    bot.register_next_step_handler(label_country, input_country)
 
-def input_country(message):
-    AccountModel.country = message.text
+def set_region(message):
+    label_region = bot.send_message(message.chat.id, "*Область:*")
+    bot.register_next_step_handler(label_region, input_region)
 
-    hide_keyboard = telebot.types.ReplyKeyboardRemove(selective=False)
-   
-
-
-def input_region(message):
-    AccountModel.region = message.text
+def set_city(message):
     label_city = bot.send_message(message.chat.id, "*Город:*")
     bot.register_next_step_handler(label_city, input_city)
 
-def input_city(message):
-    AccountModel.city = message.text
+def set_address(message):
     label_address = bot.send_message(message.chat.id, "*Адресс:*")
     bot.register_next_step_handler(label_address, input_address)
 
-def input_address(message):
-    AccountModel.address = message.text
+
+def set_birthday(message):
     label_datebirthday = bot.send_message(message.chat.id, "*Дата рождения.* Формат: _день-месяц-год_")
     bot.register_next_step_handler(label_datebirthday, input_datebirthday)
+
+def set_type_payment(message):
+    select_payment_markup = telebot.types.InlineKeyboardMarkup(row_width=1)
+    payment_100 = telebot.types.InlineKeyboardButton("100грн.", callback_data="select_payment_100")
+    payment_300 = telebot.types.InlineKeyboardButton("300грн.", callback_data="select_payment_300")
+    select_payment_markup.add(payment_100, payment_300)
+
+
+    bot.send_message(message.chat.id, "Есть 2 варианта оплаты:\n*Сразу после регистрации - 100 грн.* \n *До 7 дней - 300грн.*",
+        reply_markup=select_payment_markup
+    )
+
+
+def set_verification_time(message):
+    time_verification_markup = telebot.types.InlineKeyboardMarkup(row_width=1)
+    now = telebot.types.InlineKeyboardButton("Сейчас", callback_data="now_verification")
+    later = telebot.types.InlineKeyboardButton("Позже", callback_data="later_verification")
+    time_verification_markup.add(now, later)
+
+    bot.send_message(message.chat.id, "Готов сейчас пройти верефикацию с документами?\n*Ссылка на регистрицию действует 15 минут...*",
+        reply_markup = time_verification_markup
+    )
+
+def input_first_name(message):
+    db_functions.set_value(
+                            table_name='accounts', 
+                            tg_id=message.chat.id, 
+                            column='first_name',
+                            value=message.text)
+    
+    set_patronymic(message)
+
+
+def input_patronymic(message):
+    db_functions.set_value(
+                            table_name="accounts",
+                            tg_id=message.chat.id,
+                            column="patronymic",
+                            value=message.text
+    )
+    label_last_name = bot.send_message(message.chat.id, "*Фамилия* как в документе:")
+    bot.register_next_step_handler(label_last_name, input_last_name)
+
+def input_last_name(message):
+    db_functions.set_value(
+                            table_name="accounts",
+                            tg_id=message.chat.id,
+                            column="last_name",
+                            value=message.text
+
+    )
+    set_country(message)
+    
+def input_region(message):
+    db_functions.set_value(
+                            table_name="accounts",
+                            tg_id=message.chat.id,
+                            column="region",
+                            value=message.text
+    )
+
+    set_city(message)
+
+
+def input_city(message):
+    db_functions.set_value(
+                                table_name="accounts",
+                                tg_id=message.chat.id,
+                                column="city",
+                                value=message.text
+        )    
+    set_address(message)
+
+def input_address(message):
+    db_functions.set_value(
+                            table_name="accounts",
+                            tg_id=message.chat.id,
+                            column="address",
+                            value=message.text
+    )    
+    set_birthday(message)
 
 
 def input_datebirthday(message):
     try:
         datetime.strptime(message.text, "%d-%m-%Y")
-        AccountModel.date_birthday = message.text
-
-        select_payment_markup = telebot.types.InlineKeyboardMarkup(row_width=1)
-        payment_100 = telebot.types.InlineKeyboardButton("100грн.", callback_data="select_payment_100")
-        payment_300 = telebot.types.InlineKeyboardButton("300грн.", callback_data="select_payment_300")
-        select_payment_markup.add(payment_100, payment_300)
-
-
-        bot.send_message(message.chat.id, "Есть 2 варианта оплаты:\n*Сразу после регистрации - 100 грн.* \n *До 7 дней - 300грн.*",
-            reply_markup=select_payment_markup
-        )
+        db_functions.set_value(
+                                table_name="accounts",
+                                tg_id=message.chat.id,
+                                column="date_birthday",
+                                value=message.text
+        ) 
+        set_type_payment(message)
         
           
     except ValueError:
@@ -301,23 +448,13 @@ def input_datebirthday(message):
 
 
 def finish_proccess(message):
-    
-    if AccountModel.tg_id is None and AccountModel.tg_username is None:
-        AccountModel.tg_username = message.chat.username
-        AccountModel.tg_id = message.chat.id
-        AccountModel.show()
-        
-        AccountModel.save()
+    db_functions.set_value(table_name="accounts", tg_id=message.chat.id, column="balance", value=0)
+    db_functions.set_value(table_name="accounts", tg_id=message.chat.id, column="status", value="None")
 
 
-    if not ReferalModel is None:
-        ReferalModel.to_id = AccountModel.tg_id
-        ReferalModel.save()
-        Account().paid_account(ReferalModel.from_id, 100)
-
-    check_mailing = len(Mailing().select_where(AccountModel.tg_id))
+    check_mailing = len(Mailing().select_where(message.chat.id))
     if check_mailing == 0:
-        mailing = Mailing(tg_id = AccountModel.tg_id, tg_username=AccountModel.tg_username,
+        mailing = Mailing(tg_id = message.chat.id, tg_username=message.from_user.username,
                 tg_chat_id = message.chat.id
             )
         mailing.save()
@@ -334,7 +471,8 @@ def menu_options(message):
         change_number_card = telebot.types.InlineKeyboardButton("Изменить реквизиты", callback_data="no_valid_credit_card")
         balance_method_markup.add(change_number_card)
         
-        bot.send_message(message.chat.id, f"Ваш баланс: *{AccountModel.balance}* грн.", reply_markup=balance_method_markup)
+        balance = db_functions.select_param_account(message.chat.id, "balance")
+        bot.send_message(message.chat.id, f"Ваш баланс: *{balance['balance']}* грн.", reply_markup=balance_method_markup)
 
     elif(message.text == "Мои рефералы"):
         referals = Referal().select_where(message.chat.id)
@@ -354,7 +492,7 @@ def menu_options(message):
         three_hundred_payment_count = len(three_hundred_payment_list)
         bot.send_message(message.chat.id, f"*Ваши рефералы:*\n_Оплата 100грн.: {one_hundred_payment_count}_\n_Оплата 300грн.: {three_hundred_payment_count}_\n_Всего: {one_hundred_payment_count+three_hundred_payment_count}_")
         
-        generate_referal_link = config.blank_referals+str(AccountModel.tg_id)
+        generate_referal_link = config.blank_referals+str(message.chat.id)
         bot.send_message(message.chat.id, f"Ваша реферальная ссылка:\n[{generate_referal_link}]({generate_referal_link})")
 
     elif(message.text == "Загрузить фото паспорта"):
@@ -378,10 +516,6 @@ def withdraw_module(message):
 
 
 def input_new_credit_card(message):
-    go_withdraw_markup = telebot.types.InlineKeyboardMarkup(row_width=1)
-    yes = telebot.types.InlineKeyboardButton("Да", callback_data="go_to_withdraw")
-    no = telebot.types.InlineKeyboardButton("Нет", callback_data="back_to_main_menu")
-    go_withdraw_markup.add(yes, no)
 
     check_validate = re.match(config.pattern_credit_card, message.text)
     if check_validate:
@@ -392,4 +526,5 @@ def input_new_credit_card(message):
         label_error = bot.send_message(message.chat.id, "_Номер карты не корректный.\nПоробуйте ещё раз_")
         bot.register_next_step_handler(label_error, input_new_credit_card)
 
-bot.polling()
+
+bot.polling(non_stop=True)

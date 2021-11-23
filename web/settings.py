@@ -28,7 +28,7 @@ SECRET_KEY = 'q5to^1mft5v^^s@ghs)-67fwti!$m&i#=-=q*t8hjw0#2_u00r'
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['verification.monster', 'www.verification.monster']
 
 
 # Application definition
@@ -84,7 +84,6 @@ WSGI_APPLICATION = 'web.wsgi.application'
 
 # Database
 # https://docs.djangoproject.com/en/2.2/ref/settings/#databases
-
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',

@@ -26,7 +26,7 @@ def all_view(request, show_type):
         return render(request, "users/cabinet/accounts/show.tpl", {"accounts": my_accounts})
 
     elif show_type == "new":
-        get_new_accounts = Accounts.objects.filter(status=None)
+        get_new_accounts = Accounts.objects.filter(status="None")
         return render(request, "users/cabinet/accounts/show.tpl", {"accounts": get_new_accounts})
 
     elif show_type == "completed":
@@ -155,7 +155,7 @@ def delete_view(request, account_id):
 
         except Exception as e:
             print(e)
-            return HttpResponse("Произошла ошибка!")
+            return redirect("/accounts/all")
         
         get_all_objects = Accounts.objects.all()
         return redirect("/accounts/all")
