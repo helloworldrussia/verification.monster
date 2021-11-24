@@ -6,7 +6,7 @@ from datetime import datetime, timedelta
 from django.shortcuts import render, redirect
 
 from users.models import User
-from accounts.models import Accounts, Completed
+from accounts.models import Accounts, Completed, DropAccount
 
 #from main import API_send_message
 
@@ -54,10 +54,36 @@ class CabinetView(LoginRequiredMixin, TemplateView):
                 "today_completed_accounts_count": today_completed_accounts_count,
                 "yesterday_completed_accounts_count": yesterday_completed_accounts_count
                  })
-        else:
-            
-            return render(request, "users/cabinet/index.tpl")
 
+        elif request.user.get_group() == "Регистратор":
+            count_not_completed_accounts = len(Accounts.objects.filter(status="None"))
+            count_registrator_completed_accounts = len(Completed.objects.filter(registrator_id=request.user.id))
+
+            registrator_accounts = Completed.objects.filter(registrator_id=request.user.id).order_by('-id')
+
+            return render(request, "users/cabinet/index.tpl", 
+            {
+                "count_not_completed_accounts": count_not_completed_accounts,
+                "count_registrator_completed_accounts": count_registrator_completed_accounts,
+                "registator_accounts": registrator_accounts
+            })
+
+        elif request.user.get_group() == "Дроповод":
+            drop_accounts = DropAccount.objects.filter(drop_user=request.user.id)
+            count_completed_drop_accounts = 0
+            for account in drop_accounts:
+                if account.get_account().status == "drop_done":
+                    count_completed_drop_accounts+=1
+                else:
+                    break
+
+            return render(request, "users/cabinet/index.tpl", 
+                {
+                    "drop_accounts": drop_accounts,
+                    "count_drop_accounts": len(drop_accounts),
+                    "count_completed_drop_accounts": count_completed_drop_accounts
+                }
+            )
 
 class ListView(LoginRequiredMixin, TemplateView):
     login_url = "/login"

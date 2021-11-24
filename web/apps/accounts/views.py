@@ -3,42 +3,49 @@ from django.http import HttpResponse
 from django.utils.decorators import method_decorator
 from django.contrib.auth.decorators import login_required
 
-from accounts.models import Accounts, Completed, Mailing, PassportFile
+from accounts.models import Accounts, Completed, Mailing, PassportFile, MultiAccounts, DropAccount
 from referals.models import Referals
 from telegram_api.app import send_message
+from config import blank_referals
 
 
 @login_required
 def all_view(request, show_type):
     if show_type == "all":
         if request.user.get_group() == "Администратор":
-            get_all_objects = Accounts.objects.all()
+            get_all_objects = Accounts.objects.all().order_by('-id')
             return render(request, "users/cabinet/accounts/show.tpl", {"accounts": get_all_objects})
         
         else: 
             return redirect("/accounts/my")
 
     elif show_type == "my":
-        get_my_completed = Completed.objects.filter(registrator_id = request.user.id)
+        get_my_completed = Completed.objects.filter(registrator_id = request.user.id).order_by('-id')
         my_accounts = list()
         for completed_account in get_my_completed:
             my_accounts.append(completed_account.account_id)
         return render(request, "users/cabinet/accounts/show.tpl", {"accounts": my_accounts})
 
     elif show_type == "new":
-        get_new_accounts = Accounts.objects.filter(status="None")
+        get_new_accounts = Accounts.objects.filter(status="None").order_by('-id') | Accounts.objects.filter(status="drop").order_by("-id")
         return render(request, "users/cabinet/accounts/show.tpl", {"accounts": get_new_accounts})
 
     elif show_type == "completed":
-        get_completed_accounts = Accounts.objects.filter(status=1)
+        get_completed_accounts = Accounts.objects.filter(status=1).order_by('-id')
         return render(request, "users/cabinet/accounts/show.tpl", {"accounts": get_completed_accounts})
 
+    elif show_type == "banlist":
+        get_banned_accounts = Accounts.objects.filter(status="ban")
+        return render(request, "users/cabinet/accounts/banlist.tpl", {"get_banned_accounts": get_banned_accounts})
 
 @login_required
 def detail_view(request, account_id):
     if request.method == "POST":
         select_account = Accounts.objects.get(id=account_id)
-        select_account.status = 1
+        if select_account.status == "drop":
+            select_account.status = "drop_done"
+        else:
+            select_account.status = 1
         select_account.save()
 
         new_completed = Completed.objects.create(
@@ -72,10 +79,26 @@ def detail_view(request, account_id):
             
             get_status = Completed.objects.filter(account_id=account_id)
             try:
-                get_passport_file = PassportFile.objects.get(tg_id=account_detail.tg_id)
-            except:
+                if account_detail.status == "drop" or account_detail.status == "drop_done":
+                    get_passport_file = PassportFile.objects.get(tg_id=account_detail.id)
+                else:
+                    get_passport_file = PassportFile.objects.get(tg_id=account_detail.tg_id)
+
+            except Exception as e:
+                print(e)
                 get_passport_file = None
-            return render(request, "users/cabinet/accounts/detail.tpl", {"user":request.user, "account": account_detail, "referal_username": referal_username, "status": get_status, "passportfile": get_passport_file})
+
+            if account_detail.status == "ref_account:1":
+                try:
+                    get_referals_by_account = Referals.objects.filter(from_id=account_detail.tg_id)
+                    count_referals_by_account = len(get_referals_by_account)
+                except:
+                    get_referals_by_account = None
+
+
+
+
+            return render(request, "users/cabinet/accounts/detail.tpl", {"user":request.user, "account": account_detail, "referal_username": referal_username, "status": get_status, "passportfile": get_passport_file, "blank_referals": blank_referals})
         except Exception as e:
             print(e)
             return HttpResponse("Заявки не найдено!")
@@ -101,7 +124,7 @@ def detail_view(request, account_id):
                         get_passport_file = PassportFile.objects.get(tg_id=account_detail.tg_id)
                     except:
                         get_passport_file = None
-                    return render(request, "users/cabinet/accounts/detail.tpl", {"user":request.user, "account": account_detail, "referal_username": referal_username, "status": get_status, "passportfile": get_passport_file})
+                    return render(request, "users/cabinet/accounts/detail.tpl", {"user":request.user, "account": account_detail, "referal_username": referal_username, "status": get_status, "passportfile": get_passport_file, "blank_referals": blank_referals})
                 except Exception as e:
                     print(e)
                     return HttpResponse("Заявки не найдено!")
@@ -124,7 +147,7 @@ def detail_view(request, account_id):
                     get_passport_file = PassportFile.objects.get(tg_id=account_detail.tg_id)
                 except:
                     get_passport_file = None
-                return render(request, "users/cabinet/accounts/detail.tpl", {"user":request.user, "account": account_detail, "referal_username": referal_username, "status": get_status, "passportfile": get_passport_file})
+                return render(request, "users/cabinet/accounts/detail.tpl", {"user":request.user, "account": account_detail, "referal_username": referal_username, "status": get_status, "passportfile": get_passport_file, "blank_referals": blank_referals})
             except Exception as e:
                 print(e)
                 return HttpResponse("Заявки не найдено!")
@@ -138,6 +161,10 @@ def delete_view(request, account_id):
     if request.user.get_group() == "Администратор":
         try:
             account_object = Accounts.objects.get(id=account_id)
+            if account_object.status == "drop" or account_object.status == "drop_done":
+                passportfile_object = PassportFile.objects.get(tg_id=account_object.id).delete()
+                mailing_object = Mailing.objects.get(tg_id=account_object.id).delete()
+                dropaccount_object = DropAccount.objects.get(account_id = account_object.id).delete()
             try:
                 passportfile_object = PassportFile.objects.get(tg_id=account_object.tg_id).delete()
             except:
@@ -176,3 +203,7 @@ def setbalance_view(request, account_id):
     get_account = Accounts.objects.get(id=account_id)
     balance_account = get_account.balance
     return render(request, "users/cabinet/accounts/setbalance.tpl", {"balance_account": balance_account})
+
+@login_required
+def ban_add_view(request):
+    return HttpResponse("ok")

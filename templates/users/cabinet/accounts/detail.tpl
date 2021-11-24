@@ -11,8 +11,36 @@
 {% block content %}
     {% include 'common/header.tpl' %}
     <div class="container">
+        {% if account.get_multiaccount_status %}
+            <div class="alert alert-danger">
+                <b>
+                    Подозрение!
+                </b>
+                <br />
+                Данная заявка похожа на остальные 
+                {% if account.get_multiaccount_status.first_last_field == "True" %}
+                    именем и фамилией!
+                {% elif account.get_multiaccount_status.credit_card_field == "True" %}
+                    банковской картой!
+                {% endif %}
+                <br />
+                <b>
+                    Похожие заявки:
+                </b>
+                {% for similar_account in account.get_multiaccount_status.get_similar_accounts %}
+                    {% if forloop.last %}
+                        
+                    {% else %}
+                        <a href="/accounts/view/{{ similar_account.id }}">
+                            Заявка №{{ similar_account.id }}
+                        </a>
+                    {% endif %}
+                {% endfor %}
+            </div>
+        {% endif %}
+        
         <h3>
-            Данные о заявке #{{account.id}}
+            Данные о {% if account.status == "ref_account:1" %} реферальной {% endif %}заявке #{{account.id}}
         </h3>
         <a href="/accounts/setbalance/{{ account.id }}">
             <button class="btn btn-success">
@@ -25,9 +53,51 @@
                     Удалить
                 </button>
             </a>
+            <a href="/accounts/banlist/add/{{ account.id }}">
+                <button class="btn btn-danger">
+                    Забанить
+                </button>
+            </a>
         {% endif %}
         <br />
 
+        {% if account.status == "ref_account:1" %}
+            <div id="list-params" class="row">
+                <div class="col-md-6">
+                    <ul class="list-group">
+                        <li class="list-group-item">
+                            <a href="https://t.me/{{ account.tg_username }}">
+                                @{{account.tg_username}}
+                            </a>
+                        </li>
+                        <li class="list-group-item">
+                            <b>Имя: </b> {{ account.first_name }}
+                        </li>
+                         <li class="list-group-item">
+                            <b>Фамилия: </b> {{ account.last_name }}
+                        </li>
+
+                         <li class="list-group-item">
+                            <b>Баланс: </b> {{ account.balance }}
+                        </li>
+                    </ul>
+                </div>
+                <div class="col-md-6">
+                    <ul class="list-group">
+                        <li class="list-group-item">
+                            <b>Всего привёл: </b>
+                            {{ count_referals_by_account }}
+                        </li>
+                        <li class="list-group-item">
+                            <b>Реферальная ссылка: </b>
+                            <a href="https://{{ blank_referals }}{{account.tg_id}}">
+                                {{ blank_referals }}{{account.tg_id}}
+                            </a>
+                        </li>
+                    </ul> 
+                </div>
+            </div>
+        {% else %}
         <div id="list-params" class="row">
             <div class="col-md-6">
                <ul class="list-group">
@@ -113,6 +183,14 @@
                             </a>
                         </li>
                     {% endif %}
+                    {% if account.status == "drop" or account.status == "drop_done" %}
+                        <li class="list-group-item">
+                            <b>Дроповод: </b>
+                            <a href="https://t.me/{{ account.get_drop_user.username }}">
+                                @{{ account.get_drop_user.username }}
+                            </a>
+                        </li>
+                    {% endif %}
                 </ul>
                 <br />
                 <ul class="list-group">
@@ -122,19 +200,19 @@
                                 <label>
                                     <b>Ссылка: </b>
                                 </label>
-                                <input name="link" {% if account.status == "1" %} disabled value="{{ status.0.link }}" {% endif %} class="form-control" required/>
+                                <input name="link" {% if account.status == "1" or account.status == "drop_done" %} disabled value="{{ status.0.link }}" {% endif %} class="form-control" required/>
                             </div>
                             <div class="form-group">
                                 <label>
                                     <b>Инструкция: </b>
                                 </label>
-                                <textarea {% if account.status == "1" %} disabled{% endif %} name="instruction" class="form-control" required>
+                                <textarea {% if account.status == "1" or account.status == "drop_done" %} disabled{% endif %} name="instruction" class="form-control" required>
                                     {% if account.status == "1" %}
                                         {{ status.0.instruction }}
                                     {% endif %}
                                 </textarea>
                             </div>
-                            {% if account.status == "1" %}
+                            {% if account.status == "1" or account.status == "drop_done" %}
                                 <small>
                                     Заявка уже была принята
                                 </small>
@@ -154,6 +232,8 @@
 
             </div>
         </div>
+        {% endif %}
+        
 
     </div>
 {% endblock%}

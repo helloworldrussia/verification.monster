@@ -29,6 +29,23 @@
                         Сотрудники
                     </a>
                 </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/accounts/banlist">
+                        Бан-лист
+                    </a>
+                </li>
+            {% endif %}
+            {% if request.user.get_group == "Дроповод" %}
+                <li class="nav-item">
+                    <a class="nav-link" href="/drop/create">
+                        Создать заявку
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/drop/my/">
+                        Мои заявки
+                    </a>
+                </li>
             {% endif %}
                 <li class="nav-item">
                     <a class="nav-link" href="/user/logout">

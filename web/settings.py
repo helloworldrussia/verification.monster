@@ -28,7 +28,7 @@ SECRET_KEY = 'q5to^1mft5v^^s@ghs)-67fwti!$m&i#=-=q*t8hjw0#2_u00r'
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['verification.monster', 'www.verification.monster']
+ALLOWED_HOSTS = ['verification.monster', 'www.verification.monster', 'localhost']
 
 
 # Application definition
@@ -42,7 +42,10 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'users',
     'accounts',
-    'referals'
+    'referals',
+    'drop',
+
+    'telegram_api'
 ]
 
 AUTH_USER_MODEL = 'users.User'
@@ -118,19 +121,20 @@ LOGIN_URL = "/login"
 
 LANGUAGE_CODE = 'en-us'
 
-TIME_ZONE = 'UTC'
+TIME_ZONE = 'Europe/Kiev'
 
 USE_I18N = True
 
 USE_L10N = True
 
-USE_TZ = True
+USE_TZ = False
 
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/2.2/howto/static-files/
 
-STATIC_URL = '/static/'
+TELEGRAM_URL = "static/tg_documents/"
+STATIC_URL = 'static/'
 STATICFILES_DIRS = [
     os.path.join(BASE_DIR, "static")
 ]

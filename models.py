@@ -191,12 +191,14 @@ class Mailing:
                         id=None,
                         tg_id=None,
                         tg_username=None,
-                        tg_chat_id=None):
+                        tg_chat_id=None,
+                        create=None):
     
         self.id = id
         self.tg_id = tg_id
         self.tg_username = tg_username
         self.tg_chat_id = tg_chat_id
+        self.create = create
 
         self.connection = sqlite3.connect(config.db_file, check_same_thread=False)
 
@@ -217,7 +219,7 @@ class Mailing:
 
     def save(self):
         cursor = self.connection.cursor()
-        query = f"INSERT INTO `accounts_mailing`(`tg_id`, `tg_username`, `tg_chat_id`) VALUES('{self.tg_id}', '{self.tg_username}', '{self.tg_chat_id}') " 
+        query = f"INSERT INTO `accounts_mailing`(`tg_id`, `tg_username`, `tg_chat_id`, `create`) VALUES('{self.tg_id}', '{self.tg_username}', '{self.tg_chat_id}', '{self.create}') " 
         cursor.execute(query)
 
         self.connection.commit()

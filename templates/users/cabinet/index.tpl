@@ -20,7 +20,7 @@
             Статистика
         </h2>
         <hr />
-        <h4 align="center">
+        <h4 align="center"></h4>
             {% if user.get_group == "Администратор" %}
                 <div class="row">
                     <div class="col-md-4">
@@ -115,6 +115,144 @@
                         </div>
                     {% endfor %}
                 </div>
+            {% elif user.get_group == "Регистратор" %}
+                <div class="row">
+                    <div class="col-md-4">
+                        <div class="card">
+                            <div class="card-body">
+                                <h5 class="card-title">
+                                    Не принятых заявок
+                                </h5>
+                                <hr />
+                                <h6 class="card-subtitle md-2 text-muted">
+                                    Заявок не принятых: 
+                                </h6>
+                                {{ count_not_completed_accounts }} 
+                        </div>
+                    </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card">
+                            <div class="card-body">
+                                <h5 class="card-title">
+                                    Ваших принятых заявок
+                                </h5>
+                                <hr />
+                                <h6 class="card-subtitle md-2 text-muted">
+                                    Вы приняли: 
+                                </h6>
+                                {{ count_registrator_completed_accounts }} 
+                        </div>
+                    </div>
+                    </div>
+                    
+                </div>
+                <br />
+                <h2>Ваши принятые заявки</h2>
+                <hr />
+                <table class="table table-light bg-light">
+                    <thead>
+                        <tr>
+                            <th scope="col">#</th>
+                            <th scope="col">Ник</th>
+                            <th scope="col">Имя</th>
+                            <th scope="col">Фамилия</th>
+                            <th scope="col">Вид оплаты</th>
+                            <th scope="col">Принята</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for account in registator_accounts %}
+                            <tr>
+                                <th scope="row">
+                                    {{ account.get_account.id }}
+                                </th>
+                                <td>
+                                    <a href="https://t.me/{{ account.get_account.tg_username }}">
+                                        @{{ account.get_account.tg_username }}
+                                    </a>
+                                </td>
+                                <td>{{ account.get_account.first_name }}</td>
+                                <td>{{ account.get_account.last_name }}</td>
+                                <td>{{ account.get_account.type_payment }}</td>
+                                <td>{{ account.get_account.get_completed_datetime }}</td>
+                            </tr>
+                        {% endfor%}
+                    </tbody>
+                </table>
+            
+            {% elif user.get_group == "Дроповод" %}
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="card">
+                            <div class="card-body">
+                                <h5 class="card-title">
+                                    Всего ваших заявок:
+                                </h5>
+                                <hr />
+                                <h6 class="card-subtitle md-2 text-muted">
+                                    Количество добавленных заявок:
+                                </h6>
+                                {{ count_drop_accounts }}
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="card">
+                            <div class="card-body">
+                                <h5 class="card-title">
+                                    Всего принятых заявок
+                                </h5>
+                                <hr />
+                                <h6 class="card-subtitle md-2 text-muted">
+                                    Количество принятых ваших заявок:
+                                </h6>
+                                {{ count_completed_drop_accounts }}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <br />
+                <h2>
+                    Ваши заявки
+                </h2>
+                <hr />
+                <table class="table table-light bg-light">
+                    <thead>
+                        <tr>
+                            <th scope="col">#</th>
+                            <th scope="col">Имя</th>
+                            <th scope="col">Фамилия</th>
+                            <th scope="col">Документ</th>
+                            <th scope="col">Тип оплаты(грн.)</th>
+                            <th scope="col">Статус</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for account in drop_accounts%}
+                            <tr>
+                                <th scope="row">
+                                    {{ account.get_account.id }}
+                                </th>
+                                <td>{{ account.get_account.first_name }}</td>
+                                <td>{{ account.get_account.last_name }}</td>
+                                <td>{{ account.get_account.document_type }}</td>
+                                <td>{{ account.get_account.type_payment }}</td>
+                                <td>
+                                    {% if account.get_account.status == "drop_done" %}
+                                        <p class="text-success">
+                                            принят
+                                        </p>
+                                    {% else%}
+                                        <p class="text-primary">
+                                            в процессе
+                                        </p>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
             {% endif %}
         </h4>
     </div>

@@ -12,7 +12,9 @@ import config
 import db_functions
 
 from models import Account, Referal, Mailing, PassportFile
-from datetime import datetime
+from datetime import datetime, date, timedelta
+
+from bot_modules import referal_module
 
 bot = telebot.TeleBot(config.token, parse_mode="Markdown", threaded=True)
 
@@ -34,6 +36,7 @@ def send_start(message):
     bot.send_message(message.chat.id, f"Привет _{message.from_user.first_name} {message.from_user.last_name}_!", reply_markup=hide_keyboard)
     
     get_account = db_functions.select_where(table_name='accounts',field='tg_id', param=message.from_user.id)
+    
     """"if len(get_account) == 1:
         if get_account[0]['status'] == "-1":
             bot.send_message(message.chat.id, "*Привет!* Ты не закончил регистрацию!")
@@ -126,6 +129,12 @@ def select_register_referal_handler(call):
         bot.send_message(call.message.chat.id, "Для регистрации подходят люди старше 18 лет, у которых есть при себе документ, удостоверяющий личность. (Тебе есть 18 лет?)", 
             reply_markup=age_markup
         )
+
+    elif(call.data == "go_to_referal"):
+        db_functions.set_value('accounts', call.message.chat.id, "status", "ref_account:-1")
+        bot.send_message(call.message.chat.id, "*Отлично!* Реферальная заявка будет создана после ввода некоторых данных:")
+        
+        referal_set_first_name(call.message)
 #   ___________________________________________________
 
 #                  Callback select country
@@ -313,6 +322,7 @@ def set_patronymic(message):
 
 def set_credit_card(message):
     check_validate = re.match(config.pattern_credit_card, message.text)
+    multi_get_account_credit_card = db_functions.select_where(table_name="accounts", field="credit_card", param=message.text)
     if check_validate:    
         db_functions.set_value('accounts', message.chat.id, "credit_card", message.text)
         bot.send_message(message.chat.id, "Перепишите ваши данные как в документе, который вы выбрали выше.")
@@ -391,6 +401,8 @@ def input_patronymic(message):
     bot.register_next_step_handler(label_last_name, input_last_name)
 
 def input_last_name(message):
+    multi_get_account_with_last_name = db_functions.select_where(table_name="accounts", field="last_name", param=message.text)
+    print("Last_name: ", len(multi_get_account_with_last_name))
     db_functions.set_value(
                             table_name="accounts",
                             tg_id=message.chat.id,
@@ -432,15 +444,25 @@ def input_address(message):
 
 def input_datebirthday(message):
     try:
-        datetime.strptime(message.text, "%d-%m-%Y")
-        db_functions.set_value(
-                                table_name="accounts",
-                                tg_id=message.chat.id,
-                                column="date_birthday",
-                                value=message.text
-        ) 
-        set_type_payment(message)
-        
+        date_birthday = datetime.strptime(message.text, "%d-%m-%Y")
+        # Convert datetime to date date_birthday.  
+        age = int((date.today() - date_birthday.date()) / timedelta(days=365.2425))
+        if age < 18:
+            db_functions.delete_record('accounts', 'tg_id', message.chat.id)
+            print("try delete")
+            referal_markup = telebot.types.InlineKeyboardMarkup(row_width=1)
+            go_to_referal = telebot.types.InlineKeyboardButton("Привлечь людей", callback_data="go_to_referal")
+            referal_markup.add(go_to_referal)
+            bot.send_message(message.chat.id, "*Регистрацию могут пройти только если вам есть 18 лет!*\nМожете заработать на реферальной системе.", reply_markup=referal_markup)
+        else:
+            db_functions.set_value(
+                                    table_name="accounts",
+                                    tg_id=message.chat.id,
+                                    column="date_birthday",
+                                    value=message.text
+            ) 
+            set_type_payment(message)
+            
           
     except ValueError:
         label_error = bot.send_message(message.chat.id, "*Неверный формат даты!* Повторите ещё раз.")
@@ -451,11 +473,53 @@ def finish_proccess(message):
     db_functions.set_value(table_name="accounts", tg_id=message.chat.id, column="balance", value=0)
     db_functions.set_value(table_name="accounts", tg_id=message.chat.id, column="status", value="None")
 
+    check_referal = db_functions.select_param_wtgid(table_name="referals", where="to_id", value=message.chat.id, param="from_id")
+    print(check_referal)
+
+    # Check multi accounts...
+    get_first_name = db_functions.select_param_account(message.chat.id, "first_name")
+    get_last_name = db_functions.select_param_account(message.chat.id, "last_name")
+    get_credit_card = db_functions.select_param_account(message.chat.id, "credit_card")
+    
+    multi_get_account_with_first_last_name = db_functions.select_where_and(
+        table_name="accounts",
+        field="first_name",
+        param = get_first_name['first_name'],
+        second_field = "last_name",
+        second_param = get_last_name['last_name']
+    )
+
+
+    count_multi_account_first_and_last = len(multi_get_account_with_first_last_name)
+    if count_multi_account_first_and_last > 1:
+        print(count_multi_account_first_and_last)
+        get_account_id = db_functions.select_param_account(message.chat.id, "id")['id']
+        db_functions.init_multiaccounts(message.chat.id, get_account_id, first_last_field=False, credit_card_field=False)
+        db_functions.set_value('accounts_multiaccounts', message.chat.id, 'first_last_field', True)
+
+    multi_get_account_with_credit_card = db_functions.select_where(
+                                            table_name='accounts', 
+                                            field="credit_card", 
+                                            param=get_credit_card['credit_card'])    
+
+   
+    count_credit_card = len(multi_get_account_with_credit_card)
+
+    if count_credit_card > 1:
+        get_account_id = db_functions.select_param_account(message.chat.id, "id")['id']
+        check_multi_record = len(db_functions.select_where('accounts_multiaccounts', 'tg_id', message.chat.id))
+        if check_multi_record >= 1:
+            db_functions.set_value('accounts_multiaccounts', message.chat.id, 'credit_card_field', True)
+        else:
+            db_functions.init_multiaccounts(message.chat.id, get_account_id)
+            db_functions.set_value('accounts_multiaccounts', message.chat.id, 'credit_card_field', True)
+
 
     check_mailing = len(Mailing().select_where(message.chat.id))
     if check_mailing == 0:
+        print("create mailing")
         mailing = Mailing(tg_id = message.chat.id, tg_username=message.from_user.username,
-                tg_chat_id = message.chat.id
+                tg_chat_id = message.chat.id, create=datetime.now()
             )
         mailing.save()
 
@@ -525,6 +589,29 @@ def input_new_credit_card(message):
     else:
         label_error = bot.send_message(message.chat.id, "_Номер карты не корректный.\nПоробуйте ещё раз_")
         bot.register_next_step_handler(label_error, input_new_credit_card)
+
+
+def referal_set_first_name(message):
+    label_set_first_name = bot.send_message(message.chat.id, "Введите ваше *имя*: ")
+    bot.register_next_step_handler(label_set_first_name, referal_input_first_name)
+
+def referal_input_first_name(message):
+    db_functions.set_value('accounts', message.chat.id, "first_name", message.text)
+
+    referal_set_last_name(message)
+
+def referal_set_last_name(message):
+    label_set_first_name = bot.send_message(message.chat.id, "Введите вашу *фамилию*: ")
+    bot.register_next_step_handler(label_set_first_name, referal_input_last_name)
+ 
+def referal_input_last_name(message):
+    db_functions.set_value('accounts', message.chat.id, "last_name", message.text)
+
+    db_functions.set_value('accounts', message.chat.id, "balance", 0)
+
+    db_functions.set_value('accounts', message.chat.id, "status", "ref_account:1")
+    bot.send_message(message.chat.id, "*Отлично* Ваша реферальная заявка была создана. \nМожете перейти в ваше меню: /start")
+
 
 
 bot.polling(non_stop=True)

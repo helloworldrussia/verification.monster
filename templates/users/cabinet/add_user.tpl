@@ -46,6 +46,7 @@
                     <select name="group" class="form-control">
                         <option value="Регистратор">Регистратор</option>
                         <option value="Администратор">Администратор</option>
+                        <option value="Дроповод">Дроповод</option>
                     </select>
                 </div>
                  <div class="form-group">

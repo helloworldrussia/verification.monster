@@ -2,6 +2,8 @@
 <html lang="ru">
     <head>
         <title>{% block title %}{% endblock %} | Verification</title>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
         {% load static %}
         <link rel="stylesheet" href="{% static 'css/bootstrap.min.css' %}">
         
