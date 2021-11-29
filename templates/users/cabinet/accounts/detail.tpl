@@ -42,6 +42,10 @@
         <h3>
             Данные о {% if account.status == "ref_account:1" %} реферальной {% endif %}заявке #{{account.id}}
         </h3>
+        <p class="text-muted">
+            Была добавлена: 
+            {{ account.get_datetime_object.day }}-{{ account.get_datetime_object.month }}-{{ account.get_datetime_object.year }} | {{ account.get_datetime_object.hour }}:{{ account.get_datetime_object.minute }}
+        </p>
         <a href="/accounts/setbalance/{{ account.id }}">
             <button class="btn btn-success">
                 Установить баланс
@@ -193,6 +197,7 @@
                     {% endif %}
                 </ul>
                 <br />
+                {% if user.get_group != "Дроповод" %}
                 <ul class="list-group">
                     <li class="list-group-item">
                         <form action="" method="POST">
@@ -218,7 +223,7 @@
                                 </small>
                                 <br />
                             {% endif %}
-                            <button class="btn btn-success" type="submit" {% if account.status == "1" or passportfile == None%} disabled{% endif %} >
+                            <button class="btn btn-success" type="submit" {% if account.status == "1" or passportfile == None or account.status == "drop_done"%} disabled{% endif %} >
                                 Принять
                             </button>
                             <br />
@@ -228,6 +233,7 @@
                         </form>
                     </li>
                 </ul>
+                {% endif %}
                
 
             </div>

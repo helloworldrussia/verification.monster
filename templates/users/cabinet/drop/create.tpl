@@ -9,6 +9,11 @@
             Создать заявку
         </h2>
         <hr />
+        {% if error %}
+            <div class="alert alert-danger">
+                {{ error }}
+            </div>
+        {% endif %}
         <form action="#" method="POST" enctype="multipart/form-data">
             <div class="row">
                 <div class="col-md-6">

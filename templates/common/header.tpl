@@ -41,11 +41,6 @@
                         Создать заявку
                     </a>
                 </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="/drop/my/">
-                        Мои заявки
-                    </a>
-                </li>
             {% endif %}
                 <li class="nav-item">
                     <a class="nav-link" href="/user/logout">

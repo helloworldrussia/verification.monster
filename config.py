@@ -1,4 +1,4 @@
-token = "2130490673:AAGGtwP-aHVE7vJki_qevxnkmowu970nJcs"
+token = "2088176622:AAEE7qtK3XOJxbbK9mbwMoNpMXDN7bbh_fc"
 
 db_file = "valid.db"
 

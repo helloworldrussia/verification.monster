@@ -91,6 +91,7 @@
                     </div>
                 </div>
                 <br />
+                
                 <h2>
                     Регистраторы
                 </h2>
@@ -109,12 +110,64 @@
                                     <h6 class="card-subtitle md-2 text-muted">
                                         Выполнено заявок:
                                     </h6>
-                                    {{ registrator.count }} 
+                                    {{ registrator.count }}
                                 </div>
                             </div>
                         </div>
                     {% endfor %}
                 </div>
+                <br />
+                
+                <h2>
+                    Дроповоды
+                </h2>
+                <hr />
+                <div class="row">
+                    {% for drop_user in drop_users %}
+                        <div class="col-md-4">
+                            <div class="card">
+                                <div class="card-body">
+                                    <h5 class="card-title">
+                                        <a href="https://t.me/{{ droup_user.tg_username }}">
+                                            @{{ drop_user.tg_username }}
+                                        </a>
+                                    </h5>
+                                    <hr />
+                                    <h6 class="card-subtitle text-muted md-2">
+                                        Добавил заявок: 
+                                    </h6>
+                                    {{ drop_user.count }}
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+                <br />
+                <h2>
+                    Администраторы
+                </h2>
+                <hr />
+                <div class="row">
+                    {% for admin_user in admin_users %}
+                        <div class="col-md-4">
+                            <div class="card">
+                                <div class="card-body">
+                                    <h5 class="card-title">
+                                        <a href="https://t.me/{{ admin_user.tg_username }}">
+                                            @{{ admin_user.tg_username }}
+                                        </a>
+                                    </h5>
+                                    <hr />
+                                    <h6 class="card-subtitle text-muted md-2">
+                                        Принятых заявок: {{ admin_user.count }}
+                                    </h6>
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+                
+        
             {% elif user.get_group == "Регистратор" %}
                 <div class="row">
                     <div class="col-md-4">
@@ -165,7 +218,9 @@
                         {% for account in registator_accounts %}
                             <tr>
                                 <th scope="row">
-                                    {{ account.get_account.id }}
+                                    <a href="/accounts/view/{{ account.get_account.id }}">
+                                        {{ account.get_account.id }}
+                                    </a>
                                 </th>
                                 <td>
                                     <a href="https://t.me/{{ account.get_account.tg_username }}">
@@ -232,7 +287,9 @@
                         {% for account in drop_accounts%}
                             <tr>
                                 <th scope="row">
-                                    {{ account.get_account.id }}
+                                    <a href="/accounts/view/{{ account.get_account.id }}">
+                                        {{ account.get_account.id }}
+                                    </a>
                                 </th>
                                 <td>{{ account.get_account.first_name }}</td>
                                 <td>{{ account.get_account.last_name }}</td>

@@ -608,6 +608,12 @@ def referal_input_last_name(message):
     db_functions.set_value('accounts', message.chat.id, "last_name", message.text)
 
     db_functions.set_value('accounts', message.chat.id, "balance", 0)
+    
+    mailing = Mailing(tg_id = message.chat.id, tg_username=message.from_user.username,
+                tg_chat_id = message.chat.id, create=datetime.now()
+            )
+    mailing.save()
+    
 
     db_functions.set_value('accounts', message.chat.id, "status", "ref_account:1")
     bot.send_message(message.chat.id, "*Отлично* Ваша реферальная заявка была создана. \nМожете перейти в ваше меню: /start")

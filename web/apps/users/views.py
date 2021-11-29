@@ -31,10 +31,24 @@ class CabinetView(LoginRequiredMixin, TemplateView):
             users = User.objects.all()
 
             registrator_accounts_count = list()
+            admin_accounts_count = list()
+            drop_accounts_count = list()
             for i in range(all_users_count):
-                registrator_accounts_count.append(
-                    {"id": users[i].id, "tg_username": users[i].username, "count": len(Completed.objects.filter(registrator_id=users[i].id))}
-                )
+                if users[i].get_group() == "Регистратор":
+                    registrator_accounts_count.append(
+                        {"id": users[i].id, "tg_username": users[i].username, "count": len(Completed.objects.filter(registrator_id=users[i].id)), "group": users[i].get_group()}
+                    )
+                
+                elif users[i].get_group() == "Администратор":
+                    admin_accounts_count.append(
+                        {"id": users[i].id, "tg_username": users[i].username, "count": len(Completed.objects.filter(registrator_id=users[i].id)), "group": users[i].get_group()}
+                    )
+            
+                elif users[i].get_group() == "Дроповод":
+                    drop_accounts_count.append(
+                        {"id": users[i].id, "tg_username": users[i].username, "count": len(DropAccount.objects.filter(drop_user_id=users[i].id)), "group": users[i].get_group()}
+                    )
+            
             
             now_date = datetime.now()
             today_completed_accounts_count = len(Completed.objects.filter(datetime__day=now_date.day, 
@@ -51,6 +65,8 @@ class CabinetView(LoginRequiredMixin, TemplateView):
                 "completed_accounts_count": completed_accounts_count,
                 "all_users_count": all_users_count,
                 "registrator_completed_accounts": registrator_accounts_count,
+                "admin_users": admin_accounts_count,
+                "drop_users": drop_accounts_count,
                 "today_completed_accounts_count": today_completed_accounts_count,
                 "yesterday_completed_accounts_count": yesterday_completed_accounts_count
                  })

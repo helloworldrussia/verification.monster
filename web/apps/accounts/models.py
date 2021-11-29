@@ -61,8 +61,25 @@ class Accounts(models.Model):
 
         except Exception as e:
             return None
-
-
+    
+    def get_datetime_object(self):
+        if self.status == "drop" or self.status == "drop_done":
+            try:
+                print("drop")
+                result = Mailing.objects.get(tg_id = self.id)
+                datetime_create = result.create
+                return datetime_create
+            except Exception as e:
+                print(e)
+        else:
+            try:
+                print("def")
+                result = Mailing.objects.get(tg_id = self.tg_id)
+                datetime_create = result.create
+                return datetime_create
+            except:
+                pass
+            
     def get_drop_user(self):
         if self.status == "drop" or self.status == "drop_done":
             get_drop_account = DropAccount.objects.get(account_id=self.id)
