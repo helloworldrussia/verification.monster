@@ -70,12 +70,14 @@ def detail_view(request, account_id):
             referal_username = None
             account_detail = Accounts.objects.get(id=account_id) 
             try:
-                referal_object = Referals.objects.get(to_id=account_detail.tg_id)
-                referal_tg_id = referal_object.from_id
+                referal_object = Referals.objects.get(from_id=account_detail.tg_id)
+                referal_tg_id = referal_object.to_id
                 referal_account = Accounts.objects.get(tg_id=referal_tg_id)
                 referal_username = referal_account.tg_username
-            except:
+            except Exception as e:
+                print(e)
                 referal_username = "нет"
+                referal_account = None
             
             get_status = Completed.objects.filter(account_id=account_id)
             try:
@@ -85,7 +87,6 @@ def detail_view(request, account_id):
                     get_passport_file = PassportFile.objects.get(tg_id=account_detail.tg_id)
 
             except Exception as e:
-                print(e)
                 get_passport_file = None
 
             if account_detail.status == "ref_account:1":
@@ -97,8 +98,7 @@ def detail_view(request, account_id):
 
 
 
-
-            return render(request, "users/cabinet/accounts/detail.tpl", {"user":request.user, "account": account_detail, "referal_username": referal_username, "status": get_status, "passportfile": get_passport_file, "blank_referals": blank_referals})
+            return render(request, "users/cabinet/accounts/detail.tpl", {"user":request.user, "account": account_detail, "referal_username": referal_username,"referal_account": referal_account, "status": get_status, "passportfile": get_passport_file, "blank_referals": blank_referals})
         except Exception as e:
             print(e)
             return HttpResponse("Заявки не найдено!")
@@ -118,6 +118,7 @@ def detail_view(request, account_id):
                         referal_username = referal_account.tg_username
                     except:
                         referal_username = "нет"
+                        referal_account = None
                     
                     get_status = Completed.objects.filter(account_id=account_id)
                     try:
@@ -131,7 +132,7 @@ def detail_view(request, account_id):
                         get_passport_file = None
 
                     print("passportfile: ", get_passport_file)
-                    return render(request, "users/cabinet/accounts/detail.tpl", {"user":request.user, "account": account_detail, "referal_username": referal_username, "status": get_status, "passportfile": get_passport_file, "blank_referals": blank_referals})
+                    return render(request, "users/cabinet/accounts/detail.tpl", {"user":request.user, "account": account_detail, "referal_username": referal_username,"referal_account":referal_account,"status": get_status, "passportfile": get_passport_file, "blank_referals": blank_referals})
                 except Exception as e:
                     print(e)
                     return HttpResponse("Заявки не найдено!")
