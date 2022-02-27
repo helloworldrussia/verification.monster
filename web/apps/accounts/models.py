@@ -1,7 +1,7 @@
+import blank
 from django.db import models
 from users.models import User
 
-# Create your models here.
 
 class Accounts(models.Model):
     id = models.AutoField(primary_key=True)
@@ -20,6 +20,9 @@ class Accounts(models.Model):
     balance = models.IntegerField(blank=True, null=True)
     type_payment = models.IntegerField(blank=True, null=True)
     status = models.TextField(default=None)
+    new_status = models.TextField(default='Входящая', blank=True, db_index=True) # новое поле для статусов заявки
+    worker = models.ForeignKey(User, on_delete=models.CASCADE, null=True, default=None) # поле в которое присваивается ид менеджера при статусе "Принята"
+    comment = models.TextField(blank=True, null=True)
 
     def get_multiaccount_status(self):
         try:
@@ -87,7 +90,7 @@ class Accounts(models.Model):
 
     def get_completed_datetime(self):
         if self.status == "1" or self.status == "drop_done":
-            get_completed_object =  Completed.objects.get(account_id=self.id)
+            get_completed_object = Completed.objects.get(account_id=self.id)
             datetime_create = get_completed_object.datetime
             minute_format = datetime_create.minute
             if datetime_create.minute < 10:
@@ -96,9 +99,8 @@ class Accounts(models.Model):
             return format_text
 
     class Meta:
-        managed = False
+        managed = False # при ошибке во время миграций закомментируй эту строку
         db_table = 'accounts'
-        
 
 
 class Completed(models.Model):
@@ -116,12 +118,14 @@ class Completed(models.Model):
     def get_account(self):
         return self.account_id
 
+
 class Mailing(models.Model):
     id = models.AutoField(primary_key=True)
     tg_id = models.IntegerField()
     tg_username = models.CharField(max_length=255)
     tg_chat_id = models.IntegerField()
     create = models.DateTimeField(auto_now_add=True, blank=True) 
+
 
 class PassportFile(models.Model):
     id = models.AutoField(primary_key=True)
@@ -135,6 +139,7 @@ class BanList(models.Model):
     account_id = models.ForeignKey(Accounts, on_delete=models.CASCADE)
     admin = models.ForeignKey(User, on_delete=models.CASCADE)
     reason = models.CharField(max_length=255)
+
 
 class MultiAccounts(models.Model):
     id = models.AutoField(primary_key=True)

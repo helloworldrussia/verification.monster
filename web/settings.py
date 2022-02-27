@@ -28,7 +28,7 @@ SECRET_KEY = 'q5to^1mft5v^^s@ghs)-67fwti!$m&i#=-=q*t8hjw0#2_u00r'
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['verification.monster', 'www.verification.monster', 'localhost', '194.67.92.117']
+ALLOWED_HOSTS = ['127.0.0.1', 'verification.monster', 'www.verification.monster', 'localhost', '194.67.92.117']
 
 
 # Application definition

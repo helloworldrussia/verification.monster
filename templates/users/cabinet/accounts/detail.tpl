@@ -7,6 +7,7 @@
     {% load static %}
     <link rel="stylesheet" href="{% static 'css/detail_account.css' %}" />
 {% endblock %}
+<link href="{% static 'css/bootstrap.min.css' %}" rel="stylesheet">
 
 {% block content %}
     {% include 'common/header.tpl' %}
@@ -40,12 +41,15 @@
         {% endif %}
         
         <h3>
-            Данные о {% if account.status == "ref_account:1" %} реферальной {% endif %}заявке #{{account.id}}
-        </h3>
+            {% comment %}Данные о {% if account.status == "ref_account:1" %} реферальной {% endif %}заявке #{{account.id}}
+            {% endcomment %}
+            Заявка {{ account.id }} - {{ account.first_name }} {{ account.last_name }}
+        </h3>{% comment %}
         <p class="text-muted">
             Была добавлена: 
             {{ account.get_datetime_object.day }}-{{ account.get_datetime_object.month }}-{{ account.get_datetime_object.year }} | {{ account.get_datetime_object.hour }}:{{ account.get_datetime_object.minute }}
-        </p>
+        </p>{% endcomment%}
+        {% comment %}
         <a href="/accounts/setbalance/{{ account.id }}">
             <button class="btn btn-success">
                 Установить баланс
@@ -62,7 +66,7 @@
                     Забанить
                 </button>
             </a>
-        {% endif %}
+        {% endif %}{% endcomment %}
         <br />
 
         {% if account.status == "ref_account:1" %}
@@ -70,7 +74,7 @@
                 <div class="col-md-6">
                     <ul class="list-group">
                         <li class="list-group-item">
-                            <a href="https://t.me/{{ account.tg_username }}">
+                            <a href="https://t.me/{{ account.tg_username }}" target="_blank">
                                 @{{account.tg_username}}
                             </a>
                         </li>
@@ -106,8 +110,9 @@
             <div class="col-md-6">
                <ul class="list-group">
                     <li class="list-group-item">
-                        <a href="https://t.me/{{ account.tg_username }}">
-                            @{{account.tg_username}}
+                        <b>Телеграм ник и имя:</b>
+                        <a href="https://t.me/{{ account.tg_username }}" target="_blank">
+                             @{{account.tg_username}} {{ account.first_name}}
                         </a>
                     </li>
                      <li class="list-group-item">
@@ -134,15 +139,18 @@
                     <li class="list-group-item">
                         <b>Дата рождения:</b> {{ account.date_birthday }}
                     </li>
+                    <li class="list-group-item">
+                        <b>Документ:</b> {{ account.document_type }}
+                    </li>
                     
                 </ul>
                 <br />
                  <ul class="list-group">
                     <li class="list-group-item">
-                        <b> Фото паспорта </b>
+                        {% comment %}<b> Фото паспорта </b>{% endcomment %}
                         <hr />
                         {% if passportfile %}
-                            <img width="300" height="500" src="/{{ passportfile.path }}" />
+                            <img width="400" height="300" src="/{{ passportfile.path }}" />
                             <br />
                             <br />
                         {% else %}
@@ -153,51 +161,100 @@
             </div>
 
             <div class="col-md-6">
+                <div class="custom_button_group">
+                    <button type="button" class="btn btn-outline-dark" onclick="myFunction()">
+                        <img src="{% static 'admin/img/copy.png' %}" width="20" height="15" alt="" style="vertical-align:middle">
+                        Копировать
+                    </button>
+                    <button type="button" class="btn btn-outline-dark">
+                        <img src="{% static 'admin/img/chat.png' %}" width="20" height="15" alt="" style="vertical-align:middle">
+                        Чат
+                    </button>
+                    <button type="button" class="btn btn-outline-danger" data-bs-toggle="modal" data-bs-target="#exampleModal">
+                        <img src="{% static 'admin/img/delete.png' %}" width="20" height="15" alt="" style="vertical-align:middle">
+                        Удалить
+                    </button>
+                </div>
+                <br>
                 <ul class="list-group">
-                     <li class="list-group-item">
-                        <b>Документ:</b> {{ account.document_type }}
+                    <li class="list-group-item">
+                        <b>Статус:</b> {{ account.new_status }}<br>
+                        <div class="dropdown">
+                          <button class="btn btn-secondary dropdown-toggle" type="button" id="dropdownMenuButton1" data-bs-toggle="dropdown" aria-expanded="false">
+                            Изменить статус
+                          </button>
+                          <ul class="dropdown-menu" aria-labelledby="dropdownMenuButton1">
+                            <li><a class="dropdown-item" href="/accounts/change__status/{{ account.pk }}/Входящая/1">Входящяя</a></li>
+                            <li><a class="dropdown-item" href="/accounts/change__status/{{ account.pk }}/Принята/1">Принята</a></li>
+                            <li><a class="dropdown-item" href="/accounts/change__status/{{ account.pk }}/Отклонена/1">Отклонена</a></li>
+                            <li><a class="dropdown-item" href="/accounts/change__status/{{ account.pk }}/Одобрена/1">Одобрена</a></li>
+                            <li><a class="dropdown-item" href="/accounts/change__status/{{ account.pk }}/Выплачена/1">Выплачена</a></li>
+                          </ul>
+                        </div>
                     </li>
                     <li class="list-group-item">
+                        <b>Время создания:</b> {{ account.get_datetime_object.day }}-{{ account.get_datetime_object.month }}-{{ account.get_datetime_object.year }} {{ account.get_datetime_object.hour }}:{{ account.get_datetime_object.minute }}
+
+                    </li>
+                    <li class="list-group-item">
+                        <b>Стоимость заявки:</b> {{ account.type_payment }}
+                    </li>
+                    <li class="list-group-item">
+                        <b>Регистратор:</b> {{ account.worker }}
+                    </li>
+                    {% comment %}<li class="list-group-item">
                         <b>Реквизиты:</b> {{ account.credit_card }}
-                    </li>
-                    <li class="list-group-item">
+                    </li>{% endcomment %}
+                    {% comment %}<li class="list-group-item">
                         <b>Баланс:</b> {{ account.balance }}
-                    </li>
+                    </li>{% endcomment %}
                      <li class="list-group-item">
                         <b>Реферал:</b> 
                         {% if referal_username == "нет" %}
                             Не имеется
                         {% else %}
-                            <a href="https://t.me/{{ referal_username }}">
+                            <a href="https://t.me/{{ referal_username }}" target="_blank">
                                 @{{ referal_username }}
                             </a>
                         {% endif %}
                     </li>
-                    <li class="list-group-item">
-                        <b>Вид оплаты:</b> {{ account.type_payment }}
-                    </li>
-                    <li class="list-group-item">
+                    {% comment %}<li class="list-group-item">
                         <b>Статус:</b> {% if status|length != 0 %} {{ status.0.status  }}  {% else %} Не принят {% endif %}
-                    </li>
-                    {% if status|length != 0 %}
+                    </li>{% endcomment %}
+                    {% comment %}{% if status|length != 0 %}
                         <li class="list-group-item">
                             <b>Регистратор:</b> 
-                            <a href="https://t.me/@{{ status.0.get_registrator_username }}">
+                            <a href="https://t.me/@{{ status.0.get_registrator_username }}" target="_blank">
                                 {{ status.0.get_registrator_username }}
                             </a>
                         </li>
-                    {% endif %}
+                    {% endif %}{% endcomment %}
                     {% if account.status == "drop" or account.status == "drop_done" %}
                         <li class="list-group-item">
                             <b>Дроповод: </b>
-                            <a href="https://t.me/{{ account.get_drop_user.username }}">
+                            <a href="https://t.me/{{ account.get_drop_user.username }}" target="_blank">
                                 @{{ account.get_drop_user.username }}
                             </a>
                         </li>
                     {% endif %}
+                    <li class="list-group-item">
+                        <b>Реферальный платеж:</b>
+                    </li>
+                    <li class="list-group-item">
+                        <div class="form-group">
+                            <form method="post">
+                                <label>
+                                <b>Комментарий: </b>
+                                </label>
+                                <br>
+                                <textarea name="account_comment" class="form-control" rows='7' required>{% if account.comment is None%}{% else %}{{ account.comment }}{% endif %}</textarea><br>
+                                <button type="submit" class="btn btn-secondary">Сохранить комментарий</button>
+                            </form>
+                        </div>
+                    </li>
                 </ul>
                 <br />
-                {% if user.get_group != "Дроповод" %}
+                {% comment %}{% if user.get_group != "Дроповод" %}
                 <ul class="list-group">
                     <li class="list-group-item">
                         <form action="" method="POST">
@@ -234,12 +291,48 @@
                     </li>
                 </ul>
                 {% endif %}
-               
+                {% endcomment %}
 
             </div>
         </div>
         {% endif %}
-        
+    </div>
 
+    <div class="modal fade" id="exampleModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+      <div class="modal-dialog modal-sm">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="exampleModalLabel">Удаление заявки {{account.id}}</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+            Заявка {{account.id}} от {{account.tg_username}} будет удалена навсегда.
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+            <button type="button" class="btn btn-danger" onclick="window.location.href = '/accounts/view/delete__account/{{account.id}}';">Подтверждаю</button>
+          </div>
+        </div>
+      </div>
     </div>
 {% endblock%}
+
+<!-- Ниже скрипт для копирования данных о заявке в буфер. Онклик висит на кнопке скопировать -->
+<!-- Ещё Ниже скрипт для модального окна (подтверждение при удалении заявки) -->
+{% block scripts %}
+<script>
+  function myFunction() {
+      navigator.clipboard.writeText('{{ account.id }}\n{{ account.first_name }}\n{{ account.patronymic }}\n{{ account.last_name }}\n{{account.country}}\n{{account.region}}\n{{account.city}}\n{{account.address}}\n{{account.date_birthday}}\n{{account.document_type}}\n{{account.tg_username}}\n{{account.get_drop_user}}');
+}
+</script>
+<script>
+var myModal = document.getElementById('myModal')
+var myInput = document.getElementById('myInput')
+
+myModal.addEventListener('shown.bs.modal', function () {
+  myInput.focus()
+})
+
+</script>
+{% endblock scripts %}
+

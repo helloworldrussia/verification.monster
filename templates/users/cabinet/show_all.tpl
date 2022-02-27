@@ -32,7 +32,7 @@
                         Почта
                     </th>
                     <th scope="col">
-                        Тип
+                        Роль
                     </th>
                     <th scope="col">
                         Действия

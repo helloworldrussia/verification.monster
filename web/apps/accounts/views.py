@@ -2,13 +2,31 @@ from django.shortcuts import render, redirect
 from django.http import HttpResponse
 from django.utils.decorators import method_decorator
 from django.contrib.auth.decorators import login_required
-
+from django.db.models import Q
 from accounts.models import Accounts, Completed, Mailing, PassportFile, MultiAccounts, DropAccount, BanList
 from referals.models import Referals
 from telegram_api.app import send_message
 from config import blank_referals
+from .mixins import change_status_func
 
 
+@login_required
+def new_all_view(request, show_type):
+    if show_type == 'all' or show_type == 'incoming':
+        queryset = Accounts.objects.filter(new_status='Входящая')
+    elif show_type == 'my':
+        queryset = Accounts.objects.filter(worker=request.user)
+    elif show_type == 'accepted':
+        queryset = Accounts.objects.filter(new_status='Одобрена')
+    elif show_type == 'active':
+        queryset = Accounts.objects.filter(Q(new_status='Входящая') | Q(new_status='Принята') | Q(new_status='Одобрена'))
+    elif show_type == 'archive':
+        queryset = Accounts.objects.filter(Q(new_status='Отклонена') | Q(new_status='Выплачена'))
+    else:
+        return HttpResponse(f'accounts.views Error: Unknown show_type "{show_type}". Line: 14')
+    return render(request, "users/cabinet/accounts/show.tpl", {"accounts": queryset, "show_type": show_type})
+
+# старая вьюха для показа страницы с заявками
 @login_required
 def all_view(request, show_type):
     if show_type == "all":
@@ -37,30 +55,36 @@ def all_view(request, show_type):
     elif show_type == "banlist":
         get_banned_accounts = BanList.objects.all()
         return render(request, "users/cabinet/accounts/banlist.tpl", {"get_banned_accounts": get_banned_accounts})
+    else:
+        return HttpResponse('Server Error')
+
 
 @login_required
 def detail_view(request, account_id):
     if request.method == "POST":
         select_account = Accounts.objects.get(id=account_id)
-        if select_account.status == "drop":
-            select_account.status = "drop_done"
-        else:
-            select_account.status = 1
+        comment = request.POST['account_comment']
+        select_account.comment = comment
         select_account.save()
-
-        new_completed = Completed.objects.create(
-            registrator_id = request.user,
-            account_id = select_account,
-            status = "Принят",
-            link = request.POST['link'],
-            instruction = request.POST['instruction']
-        )
-
-        content_message_invite = f"Вашу заявку принял @{request.user.username}. \n Вы можете обращяться к нему если возникнут вопросы."
-        send_message(account_id = select_account.id, text=content_message_invite)
-
-        content_message_instructions = f"*Перейдите по ссылке:* [перейти...]({request.POST['link']}) \n*Инструкция*: \n{request.POST['instruction']}"
-        send_message(account_id = select_account.id, text = content_message_instructions)
+        # if select_account.status == "drop":
+        #     select_account.status = "drop_done"
+        # else:
+        #     select_account.status = 1
+        # select_account.save()
+        #
+        # new_completed = Completed.objects.create(
+        #     registrator_id = request.user,
+        #     account_id = select_account,
+        #     status = "Принят",
+        #     link = request.POST['link'],
+        #     instruction = request.POST['instruction']
+        # )
+        #
+        # content_message_invite = f"Вашу заявку принял @{request.user.username}. \n Вы можете обращяться к нему если возникнут вопросы."
+        # send_message(account_id = select_account.id, text=content_message_invite)
+        #
+        # content_message_instructions = f"*Перейдите по ссылке:* [перейти...]({request.POST['link']}) \n*Инструкция*: \n{request.POST['instruction']}"
+        # send_message(account_id = select_account.id, text = content_message_instructions)
 
         return redirect("/accounts/view/"+str(select_account.id))
 
@@ -295,4 +319,21 @@ def ban_add_view(request, account_id):
     
     else:
         return redirect("/user")
-    
+
+
+@login_required
+def change_status_view(request, account_id, status, detail):
+    worker = request.user.id
+    change_status_func(worker, account_id, status)
+    if detail:
+        return redirect(f'/accounts/view/{account_id}')
+    else:
+        return redirect(f'/accounts/all')
+
+@login_required
+def delete_account(request, account_id):
+    if request.user.get_group() != "Администратор":
+        return redirect(f'/accounts/view/{account_id}')
+    target = Accounts.objects.get(pk=account_id)
+    target.delete()
+    return redirect('/accounts/all')

@@ -35,13 +35,13 @@
             <div class="col-md-6">
                 <div class="form-group">
                     <label>
-                        Ник
+                        Телеграм ник
                     </label>
                     <input name="username" class="form-control" placeholder="vasypupkin" required/>
                 </div>
                 <div class="form-group">
                     <label>
-                        Группа
+                        Роль
                     </label>
                     <select name="group" class="form-control">
                         <option value="Регистратор">Регистратор</option>
