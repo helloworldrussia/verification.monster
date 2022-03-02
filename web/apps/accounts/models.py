@@ -23,6 +23,7 @@ class Accounts(models.Model):
     new_status = models.TextField(default='Входящая', blank=True, db_index=True) # новое поле для статусов заявки
     worker = models.ForeignKey(User, on_delete=models.CASCADE, null=True, default=None) # поле в которое присваивается ид менеджера при статусе "Принята"
     comment = models.TextField(blank=True, null=True)
+    chat_link = models.TextField(null=True)
 
     def get_multiaccount_status(self):
         try:
@@ -99,7 +100,7 @@ class Accounts(models.Model):
             return format_text
 
     class Meta:
-        managed = False # при ошибке во время миграций закомментируй эту строку
+        #managed = False # при ошибке во время миграций закомментируй эту строку
         db_table = 'accounts'
 
 

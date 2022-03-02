@@ -79,7 +79,10 @@
                     {% comment %}<tr {% if account.new_status == 'Отклонена'%} class="table-danger"{% elif account.new_status == 'Принята' %}class="table-warning"{% elif account.new_status == 'Одобрена' %}class="table-primary"{% elif account.new_status == 'Выплачена' %}class="table-success"{% endif %}>{% endcomment %}
                     <tr {% if account.new_status == 'Входящая' %}class="table-warning"{% endif %}>
                     <td>{% if account.id is None %}-{% else %}{{ account.id }}{% endif %}</td>
-                    <td>{% if account.tg_username is None %}-{% else %}{{ account.tg_username }}{% endif %}</td>
+                    <td><a href="https://t.me/{{ account.tg_username }}" target="_blank">
+                             @{{account.tg_username}}</a>  {%if account.first_name%}{{ account.first_name}}{%else%}{%endif%}
+
+                    </td>
                     <td>{% if account.first_name is None %}-{% else %}{{ account.first_name }}{% endif %}</td>
                     <td>{% if account.last_name is None %}-{% else %}{{ account.last_name }}{% endif %}</td>
                     <td>
@@ -100,7 +103,7 @@
                     <td>{% if account.worker is None %}-{% else %}{{ account.worker }}{% endif %}</td>
                     <td>
                         <div class="btn-group">
-                          <a href="#" class="btn btn-outline-dark">
+                          <a {%if account.chat_link %}href="{{ account.chat_link }}" target="_blank" {%else%}{%endif%} target="_blank" class="btn btn-outline-dark">
                             <img src="{% static 'admin/img/chat_accounts.png' %}" width="20" height="20" class="account_icon" alt="">
                           </a>
                           <a href="/accounts/view/{{ account.id }}" class="btn btn-outline-dark">

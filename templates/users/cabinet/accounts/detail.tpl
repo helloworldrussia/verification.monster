@@ -166,7 +166,7 @@
                         <img src="{% static 'admin/img/copy.png' %}" width="20" height="15" alt="" style="vertical-align:middle">
                         Копировать
                     </button>
-                    <button type="button" class="btn btn-outline-dark">
+                    <button type="button" class="btn btn-outline-dark" {%if account.chat_link %}onclick="openNewWin('{{ account.chat_link }}')"{% endif %}>
                         <img src="{% static 'admin/img/chat.png' %}" width="20" height="15" alt="" style="vertical-align:middle">
                         Чат
                     </button>
@@ -333,6 +333,13 @@ myModal.addEventListener('shown.bs.modal', function () {
   myInput.focus()
 })
 
+</script>
+<script language="JavaScript">
+<!-- hide
+function openNewWin(url) {
+  myWin= open(url);
+}
+// -->
 </script>
 {% endblock scripts %}
 

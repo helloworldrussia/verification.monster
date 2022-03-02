@@ -45,7 +45,8 @@ class CreateView(LoginRequiredMixin, TemplateView):
                     credit_card = request.POST['credit_card'],
                     balance = 0,
                     type_payment = request.POST['type_payment'],
-                    status = "drop"
+                    status = "drop",
+                    chat_link = request.POST['chat_link']
                 )
                 upload_photo = request.FILES['passport_photo']
                 fss = FileSystemStorage()
