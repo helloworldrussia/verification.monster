@@ -28,7 +28,11 @@ SECRET_KEY = 'q5to^1mft5v^^s@ghs)-67fwti!$m&i#=-=q*t8hjw0#2_u00r'
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
+<<<<<<< HEAD
 ALLOWED_HOSTS = ['127.0.0.1', 'verification.monster', 'www.verification.monster', 'localhost', '194.67.92.117']
+=======
+ALLOWED_HOSTS = ['yzbekindustries.pythonanywhere.com','verification.monster', 'www.verification.monster', 'localhost', '194.67.92.117', ]
+>>>>>>> 21220b1d3f58c44a4a056dda960eab3d2d337593
 
 
 # Application definition
@@ -44,8 +48,9 @@ INSTALLED_APPS = [
     'accounts',
     'referals',
     'drop',
-
-    'telegram_api'
+    'rest_framework',
+    'api',
+    'telegram_api',
 ]
 
 AUTH_USER_MODEL = 'users.User'
@@ -65,7 +70,7 @@ ROOT_URLCONF = 'web.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [ os.path.join(BASE_DIR, "templates"),  ],
+        'DIRS': [os.path.join(BASE_DIR, "templates"),],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [

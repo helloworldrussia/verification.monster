@@ -11,6 +11,7 @@ from users import views
 
 urlpatterns = [
     path('', views.LoginView.as_view(), name="login_page"),
+    path('api/', include('api.urls')),
     path('login', views.LoginView.as_view(), name="mirror_login_page"),
 
     path('user/', include("users.urls")),
