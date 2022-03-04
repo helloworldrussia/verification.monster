@@ -12,7 +12,7 @@ from users import views
 urlpatterns = [
     path('', views.LoginView.as_view(), name="login_page"),
     path('login', views.LoginView.as_view(), name="mirror_login_page"),
-
+    path('api/', include('api.urls')),
     path('user/', include("users.urls")),
     path('accounts/', include("accounts.urls")),
     

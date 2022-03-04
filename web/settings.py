@@ -44,7 +44,8 @@ INSTALLED_APPS = [
     'accounts',
     'referals',
     'drop',
-
+    'rest_framework',
+    'api',
     'telegram_api'
 ]
 
